@@ -1,8 +1,7 @@
 --[[
-    Excell Internal Library | v3.5 (Final Context Fix)
-    - Fix: STRICT single-instance Context Menu (No stacking).
-    - Style: Deep Black + Neon Purple (Juju Style).
-    - Features: Tall Window, Sub-Tabs, FOV, Scale.
+    Excell Internal Library | v3.6 (Anti-Stack Fix)
+    - Fix: Forces deletion of OLD menu before creating NEW one.
+    - Features: Juju Style, Sub-Tabs, FOV, Scale.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -12,13 +11,12 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
 local Library = {}
-Library.ActiveMenu = nil -- TRACKER FOR OPEN MENUS
 
 function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- 1. CLEANUP OLD UI
+    -- 1. DESTROY OLD UI
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -28,7 +26,7 @@ function Library:CreateWindow(Config)
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 
-    -- 2. SCALE WRAPPER
+    -- 2. SCALE LAYER
     local ScaleFrame = Instance.new("Frame", ScreenGui)
     ScaleFrame.Name = "Scale"
     ScaleFrame.BackgroundTransparency = 1
@@ -43,7 +41,7 @@ function Library:CreateWindow(Config)
     MainFrame.BorderColor3 = Accent
     MainFrame.BorderSizePixel = 1
     MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300)
-    MainFrame.Size = UDim2.new(0, 600, 0, 600) -- TALL 600px
+    MainFrame.Size = UDim2.new(0, 600, 0, 600)
     MainFrame.Active = true
     MainFrame.Draggable = true
 
@@ -109,7 +107,7 @@ function Library:CreateWindow(Config)
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.Visible = false
 
-        -- SIDEBAR (SubTabs)
+        -- SIDEBAR
         local Sidebar = Instance.new("Frame", TabPage)
         Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
         Sidebar.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -118,7 +116,7 @@ function Library:CreateWindow(Config)
         local SidebarList = Instance.new("UIListLayout", Sidebar)
         SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
 
-        -- ITEMS AREA
+        -- ITEMS
         local Items = Instance.new("Frame", TabPage)
         Items.BackgroundTransparency = 1
         Items.Position = UDim2.new(0, 150, 0, 10)
@@ -179,6 +177,7 @@ function Library:CreateWindow(Config)
                 local V = Instance.new("TextLabel", F); V.Text=tostring(Config.CurrentValue); V.TextColor3=Accent; V.BackgroundTransparency=1; V.Position=UDim2.new(1,-40,0,0); V.Size=UDim2.new(0,30,0,15); V.Font=Enum.Font.Code; V.TextSize=12
                 local BG = Instance.new("TextButton", F); BG.BackgroundColor3=Color3.fromRGB(25,25,25); BG.BorderColor3=Color3.fromRGB(50,50,50); BG.Position=UDim2.new(0,0,0,18); BG.Size=UDim2.new(1,-10,0,6); BG.Text=""
                 local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0)
+                
                 local Drag=false
                 BG.MouseButton1Down:Connect(function() Drag=true end)
                 UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Drag=false end end)
@@ -199,7 +198,6 @@ function Library:CreateWindow(Config)
                 local Key = Config.Default
                 local Binding = false
 
-                -- Left Click: Bind
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
@@ -208,56 +206,52 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- Right Click: Context Menu (FIXED)
+                -- RIGHT CLICK FIX
                 B.MouseButton2Click:Connect(function()
-                    -- DESTROY ANY EXISTING MENU FIRST
-                    if Library.ActiveMenu then 
-                        Library.ActiveMenu:Destroy() 
-                        Library.ActiveMenu = nil
+                    -- DELETE OLD MENU (Loop through all children to be safe)
+                    for _, child in pairs(ScreenGui:GetChildren()) do
+                        if child.Name == "ContextMenu" then child:Destroy() end
                     end
 
+                    -- CREATE NEW MENU
                     local Menu = Instance.new("Frame", ScreenGui)
+                    Menu.Name = "ContextMenu" -- ID for cleanup
                     Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
                     Menu.BorderColor3 = Accent
                     Menu.BorderSizePixel = 1
-                    Menu.Size = UDim2.new(0, 80, 0, 65)
+                    Menu.Size = UDim2.new(0, 80, 0, 70)
                     Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
-                    Menu.ZIndex = 100 -- Top Layer
-                    Library.ActiveMenu = Menu -- REGISTER MENU
-
-                    local ML = Instance.new("UIListLayout", Menu); ML.SortOrder=Enum.SortOrder.LayoutOrder
+                    Menu.ZIndex = 100
+                    
+                    local Layout = Instance.new("UIListLayout", Menu); Layout.SortOrder=Enum.SortOrder.LayoutOrder
                     
                     local function AddOpt(Name)
                         local Opt = Instance.new("TextButton", Menu)
-                        Opt.Size = UDim2.new(1, 0, 0, 21)
+                        Opt.Size = UDim2.new(1, 0, 0, 22)
                         Opt.BackgroundTransparency = 1
                         Opt.Text = Name
+                        Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
                         Opt.Font = Enum.Font.Code
                         Opt.TextSize = 12
-                        Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
                         Opt.ZIndex = 101
                         
                         Opt.MouseButton1Click:Connect(function()
                             Mode = Name
                             Menu:Destroy()
-                            Library.ActiveMenu = nil
                         end)
                     end
                     AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
-                    
-                    -- Close on click away
+
+                    -- CLOSE ON CLICK AWAY
                     spawn(function()
                         local input = UserInputService.InputBegan:Wait()
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                            if Library.ActiveMenu then 
-                                Library.ActiveMenu:Destroy() 
-                                Library.ActiveMenu = nil
-                            end
+                            if Menu then Menu:Destroy() end
                         end
                     end)
                 end)
                 
-                -- Key Logic
+                -- LOGIC
                 local Toggled = false
                 UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
