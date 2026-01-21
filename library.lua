@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.6 (Emergency Fix)
-    - Fix: Restored missing 'return' statement causing menu failure.
-    - Features: Dropdowns, Sliders, Toggles, Clean Keybinds.
+    Excell Internal Library | v4.7 (Parenting Fix)
+    - Fix: Fallback to PlayerGui if CoreGui fails (Solves "Not Opening").
+    - Fix: Added debug prints to confirm loading.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -9,10 +9,13 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
+print("[Excell] Library Module Loaded") -- Debug print
+
 local Library = {}
 Library.ActiveMenu = nil 
 
 function Library:CreateWindow(Config)
+    print("[Excell] Creating Window...") -- Debug print
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
@@ -20,12 +23,20 @@ function Library:CreateWindow(Config)
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
+    if LocalPlayer.PlayerGui:FindFirstChild("ExcellInternal_v3") then
+        LocalPlayer.PlayerGui.ExcellInternal_v3:Destroy()
+    end
 
     -- Create GUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
-    pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+    
+    -- CRITICAL FIX: Attempt CoreGui, fallback to PlayerGui
+    local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+    if not success or not ScreenGui.Parent then
+        ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    end
 
     local ScaleFrame = Instance.new("Frame", ScreenGui)
     ScaleFrame.Name = "Scale"
@@ -195,30 +206,14 @@ function Library:CreateWindow(Config)
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
                 
                 MainBtn.MouseButton1Click:Connect(function()
-                    Open = not Open
-                    Scroll.Visible = Open
-                    if Open then
-                        F.Size = UDim2.new(1, 0, 0, 50 + ListSize)
-                    else
-                        F.Size = UDim2.new(1, 0, 0, 50)
-                    end
+                    Open = not Open; Scroll.Visible = Open
+                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end
                 end)
                 
                 for _, Option in pairs(Config.Options) do
-                    local OptBtn = Instance.new("TextButton", Scroll)
-                    OptBtn.Size = UDim2.new(1, 0, 0, 20)
-                    OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                    OptBtn.Text = Option
-                    OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-                    OptBtn.Font = Enum.Font.Code
-                    OptBtn.TextSize = 11
-                    OptBtn.BorderSizePixel = 0
-                    
+                    local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
                     OptBtn.MouseButton1Click:Connect(function()
-                        Open = false
-                        Scroll.Visible = false
-                        F.Size = UDim2.new(1, 0, 0, 50)
-                        MainBtn.Text = Option
+                        Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); MainBtn.Text = Option
                         if Config.Callback then Config.Callback(Option) end
                     end)
                 end
@@ -236,11 +231,8 @@ function Library:CreateWindow(Config)
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
-                    if i.UserInputType==Enum.UserInputType.Keyboard then 
-                        Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false; UpdateText()
-                    elseif i.UserInputType==Enum.UserInputType.MouseButton1 then
-                        Binding=false; B.TextColor3=Color3.fromRGB(150,150,150); UpdateText()
-                    end 
+                    if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false; UpdateText()
+                    elseif i.UserInputType==Enum.UserInputType.MouseButton1 then Binding=false; B.TextColor3=Color3.fromRGB(150,150,150); UpdateText() end 
                 end)
 
                 B.MouseButton2Click:Connect(function()
