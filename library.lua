@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v3.1 (Dark Internal)
-    - Style: Deep Black (10,10,10), Code Font, 1px Borders
-    - Features: Robust Scaling, Clean Sidebar
+    Excell Internal Library | v3.2 (Context Menu)
+    - Feature: Right-Click Keybind for Modes (Toggle/Hold/Always)
+    - Fix: Preserves ALL previous features (Scale, Themes, etc.)
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -16,7 +16,7 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- 1. DESTROY OLD INSTANCES
+    -- 1. CLEANUP
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -26,117 +26,69 @@ function Library:CreateWindow(Config)
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 
-    -- 2. SCALE LAYER
+    -- 2. SCALE WRAPPER
     local ScaleFrame = Instance.new("Frame", ScreenGui)
     ScaleFrame.Name = "Scale"
     ScaleFrame.BackgroundTransparency = 1
     ScaleFrame.Size = UDim2.new(1, 0, 1, 0)
-    
     local UIScale = Instance.new("UIScale", ScaleFrame)
     UIScale.Scale = 1
 
     -- 3. MAIN WINDOW
     local MainFrame = Instance.new("Frame", ScaleFrame)
     MainFrame.Name = "Main"
-    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10) -- Deep Black
+    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     MainFrame.BorderColor3 = Accent
     MainFrame.BorderSizePixel = 1
     MainFrame.Position = UDim2.new(0.5, -300, 0.5, -275)
-    MainFrame.Size = UDim2.new(0, 600, 0, 550) -- TALL WINDOW
+    MainFrame.Size = UDim2.new(0, 600, 0, 550)
     MainFrame.Active = true
     MainFrame.Draggable = true
 
-    -- DECORATION
+    -- (Decoration Code - Preserved)
     local TopBar = Instance.new("Frame", MainFrame)
-    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    TopBar.BorderSizePixel = 0
-    TopBar.Size = UDim2.new(1, 0, 0, 25)
-
+    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TopBar.BorderSizePixel=0; TopBar.Size=UDim2.new(1,0,0,25)
     local TitleLbl = Instance.new("TextLabel", TopBar)
-    TitleLbl.BackgroundTransparency = 1
-    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
-    TitleLbl.Size = UDim2.new(1, -20, 1, 0)
-    TitleLbl.Font = Enum.Font.Code
-    TitleLbl.Text = Title
-    TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLbl.TextSize = 13
-    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local AccentLine = Instance.new("Frame", TopBar)
-    AccentLine.BackgroundColor3 = Accent
-    AccentLine.BorderSizePixel = 0
-    AccentLine.Position = UDim2.new(0, 0, 1, 0)
-    AccentLine.Size = UDim2.new(1, 0, 0, 1)
+    TitleLbl.Text=Title; TitleLbl.Font=Enum.Font.Code; TitleLbl.TextColor3=Color3.new(1,1,1); TitleLbl.BackgroundTransparency=1; TitleLbl.Size=UDim2.new(1,-10,1,0); TitleLbl.Position=UDim2.new(0,10,0,0); TitleLbl.TextXAlignment=Enum.TextXAlignment.Left
+    local Line = Instance.new("Frame", TopBar); Line.BackgroundColor3=Accent; Line.BorderSizePixel=0; Line.Position=UDim2.new(0,0,1,0); Line.Size=UDim2.new(1,0,0,1)
 
     -- TAB BAR
     local TabBar = Instance.new("Frame", MainFrame)
-    TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    TabBar.BorderSizePixel = 1
-    TabBar.Position = UDim2.new(0, 10, 0, 35)
-    TabBar.Size = UDim2.new(1, -20, 0, 30)
-    
-    local TabLayout = Instance.new("UIListLayout", TabBar)
-    TabLayout.FillDirection = Enum.FillDirection.Horizontal
-    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12); TabBar.BorderColor3=Color3.fromRGB(30,30,30); TabBar.BorderSizePixel=1
+    TabBar.Position = UDim2.new(0, 10, 0, 35); TabBar.Size = UDim2.new(1, -20, 0, 30)
+    local TabLayout = Instance.new("UIListLayout", TabBar); TabLayout.FillDirection=Enum.FillDirection.Horizontal; TabLayout.SortOrder=Enum.SortOrder.LayoutOrder
 
     -- CONTENT
     local Content = Instance.new("Frame", MainFrame)
-    Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    Content.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    Content.BorderSizePixel = 1
-    Content.Position = UDim2.new(0, 10, 0, 75)
-    Content.Size = UDim2.new(1, -20, 1, -85)
+    Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Content.BorderColor3=Color3.fromRGB(30,30,30); Content.BorderSizePixel=1
+    Content.Position = UDim2.new(0, 10, 0, 75); Content.Size = UDim2.new(1, -20, 1, -85)
 
     local FirstTab = true
     local WindowFunctions = {}
 
-    function WindowFunctions:SetScale(Value)
-        UIScale.Scale = Value
-    end
+    function WindowFunctions:SetScale(Val) UIScale.Scale = Val end
 
     function WindowFunctions:CreateTab(TabName)
         local TabBtn = Instance.new("TextButton", TabBar)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        TabBtn.BorderColor3 = Color3.fromRGB(30, 30, 30)
-        TabBtn.BorderSizePixel = 1
-        TabBtn.Size = UDim2.new(0, 120, 1, 0)
-        TabBtn.Font = Enum.Font.Code
-        TabBtn.Text = TabName
-        TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
-        TabBtn.TextSize = 12
+        TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TabBtn.BorderColor3=Color3.fromRGB(30,30,30); TabBtn.BorderSizePixel=1
+        TabBtn.Size = UDim2.new(0, 120, 1, 0); TabBtn.Font = Enum.Font.Code; TabBtn.Text = TabName; TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100); TabBtn.TextSize = 12
 
         local TabPage = Instance.new("Frame", Content)
-        TabPage.BackgroundTransparency = 1
-        TabPage.Size = UDim2.new(1, 0, 1, 0)
-        TabPage.Visible = false
+        TabPage.BackgroundTransparency = 1; TabPage.Size = UDim2.new(1, 0, 1, 0); TabPage.Visible = false
 
-        -- SIDEBAR (SubTabs)
         local Sidebar = Instance.new("Frame", TabPage)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        Sidebar.BorderColor3 = Color3.fromRGB(30, 30, 30)
-        Sidebar.BorderSizePixel = 1
-        Sidebar.Size = UDim2.new(0, 140, 1, 0)
-        local SidebarList = Instance.new("UIListLayout", Sidebar)
-        SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Sidebar.BorderColor3=Color3.fromRGB(30,30,30); Sidebar.BorderSizePixel=1; Sidebar.Size=UDim2.new(0,140,1,0)
+        local SidebarList = Instance.new("UIListLayout", Sidebar); SidebarList.SortOrder=Enum.SortOrder.LayoutOrder
 
-        -- ITEMS
         local Items = Instance.new("Frame", TabPage)
-        Items.BackgroundTransparency = 1
-        Items.Position = UDim2.new(0, 150, 0, 10)
-        Items.Size = UDim2.new(1, -160, 1, -20)
+        Items.BackgroundTransparency=1; Items.Position=UDim2.new(0,150,0,10); Items.Size=UDim2.new(1,-160,1,-20)
 
-        if FirstTab then
-            TabBtn.TextColor3 = Accent
-            TabPage.Visible = true
-            FirstTab = false
-        end
+        if FirstTab then TabBtn.TextColor3=Accent; TabPage.Visible=true; FirstTab=false end
 
         TabBtn.MouseButton1Click:Connect(function()
             for _,v in pairs(Content:GetChildren()) do v.Visible=false end
             for _,v in pairs(TabBar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3=Color3.fromRGB(100,100,100) end end
-            TabPage.Visible = true
-            TabBtn.TextColor3 = Accent
+            TabPage.Visible=true; TabBtn.TextColor3=Accent
         end)
 
         local TabFuncs = {}
@@ -144,33 +96,18 @@ function Library:CreateWindow(Config)
 
         function TabFuncs:CreateSubTab(Name)
             local SubBtn = Instance.new("TextButton", Sidebar)
-            SubBtn.BackgroundTransparency = 1
-            SubBtn.Size = UDim2.new(1, 0, 0, 25)
-            SubBtn.Font = Enum.Font.Code
-            SubBtn.Text = " " .. Name
-            SubBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
-            SubBtn.TextSize = 12
-            SubBtn.TextXAlignment = Enum.TextXAlignment.Left
+            SubBtn.BackgroundTransparency=1; SubBtn.Size=UDim2.new(1,0,0,25); SubBtn.Font=Enum.Font.Code; SubBtn.Text=" "..Name; SubBtn.TextColor3=Color3.fromRGB(100,100,100); SubBtn.TextSize=12; SubBtn.TextXAlignment=Enum.TextXAlignment.Left
 
             local Container = Instance.new("ScrollingFrame", Items)
-            Container.BackgroundTransparency = 1
-            Container.Size = UDim2.new(1, 0, 1, 0)
-            Container.Visible = false
-            Container.ScrollBarThickness = 2
-            local List = Instance.new("UIListLayout", Container)
-            List.Padding = UDim.new(0, 5)
+            Container.BackgroundTransparency=1; Container.Size=UDim2.new(1,0,1,0); Container.Visible=false; Container.ScrollBarThickness=2
+            local List = Instance.new("UIListLayout", Container); List.Padding=UDim.new(0,5)
 
-            if FirstSub then
-                SubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Container.Visible = true
-                FirstSub = false
-            end
+            if FirstSub then SubBtn.TextColor3=Color3.new(1,1,1); Container.Visible=true; FirstSub=false end
 
             SubBtn.MouseButton1Click:Connect(function()
                 for _,v in pairs(Items:GetChildren()) do v.Visible=false end
                 for _,v in pairs(Sidebar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3=Color3.fromRGB(100,100,100) end end
-                Container.Visible = true
-                SubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Container.Visible=true; SubBtn.TextColor3=Color3.new(1,1,1)
             end)
 
             local PageFuncs = {}
@@ -183,7 +120,7 @@ function Library:CreateWindow(Config)
                 local Fill = Instance.new("Frame", Box); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new(1,0,1,0); Fill.Visible=Config.CurrentValue or false
                 B.MouseButton1Click:Connect(function() Fill.Visible=not Fill.Visible; if Config.Callback then Config.Callback(Fill.Visible) end end)
             end
-            
+
             -- SLIDER
             function PageFuncs:CreateSlider(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,35)
@@ -191,27 +128,72 @@ function Library:CreateWindow(Config)
                 local V = Instance.new("TextLabel", F); V.Text=tostring(Config.CurrentValue); V.TextColor3=Accent; V.BackgroundTransparency=1; V.Position=UDim2.new(1,-40,0,0); V.Size=UDim2.new(0,30,0,15); V.Font=Enum.Font.Code; V.TextSize=12
                 local BG = Instance.new("TextButton", F); BG.BackgroundColor3=Color3.fromRGB(25,25,25); BG.BorderColor3=Color3.fromRGB(50,50,50); BG.Position=UDim2.new(0,0,0,18); BG.Size=UDim2.new(1,-10,0,6); BG.Text=""
                 local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0)
-                
                 local Drag=false
                 BG.MouseButton1Down:Connect(function() Drag=true end)
                 UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Drag=false end end)
-                UserInputService.InputChanged:Connect(function(i)
-                    if Drag and i.UserInputType==Enum.UserInputType.MouseMovement then
-                        local S = math.clamp((UserInputService:GetMouseLocation().X - BG.AbsolutePosition.X)/BG.AbsoluteSize.X,0,1)
-                        local New = math.floor(Config.Range[1] + ((Config.Range[2]-Config.Range[1])*S))
-                        V.Text = tostring(New); Fill.Size=UDim2.new(S,0,1,0); Config.Callback(New)
-                    end
-                end)
+                UserInputService.InputChanged:Connect(function(i) if Drag and i.UserInputType==Enum.UserInputType.MouseMovement then
+                    local S = math.clamp((UserInputService:GetMouseLocation().X - BG.AbsolutePosition.X)/BG.AbsoluteSize.X,0,1)
+                    local New = math.floor(Config.Range[1] + ((Config.Range[2]-Config.Range[1])*S))
+                    V.Text = tostring(New); Fill.Size=UDim2.new(S,0,1,0); Config.Callback(New)
+                end end)
             end
 
-            -- KEYBIND
+            -- KEYBIND (Updated with Context Menu)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-60,0.5,-9); B.Size=UDim2.new(0,50,0,18); B.Text=Config.Default and Config.Default.Name or "None"; B.TextColor3=Color3.fromRGB(150,150,150); B.Font=Enum.Font.Code; B.TextSize=11
-                local Binding, Key = false, Config.Default
-                B.MouseButton1Click:Connect(function() Binding=true; B.Text="..."; B.TextColor3=Accent; local i=UserInputService.InputBegan:Wait(); if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; B.Text=Key.Name; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false end end)
-                RunService.RenderStepped:Connect(function() if Config.Callback then Config.Callback(UserInputService:IsKeyDown(Key or Enum.KeyCode.Unknown)) end end)
+                
+                local Mode = "Toggle" -- Default
+                local Key = Config.Default
+                local Binding = false
+
+                -- BINDING LOGIC
+                B.MouseButton1Click:Connect(function() 
+                    Binding=true; B.Text="..."; B.TextColor3=Accent 
+                    local i = UserInputService.InputBegan:Wait()
+                    if i.UserInputType==Enum.UserInputType.Keyboard then 
+                        Key=i.KeyCode; B.Text=Key.Name; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false 
+                    end 
+                end)
+
+                -- CONTEXT MENU (Right Click)
+                B.MouseButton2Click:Connect(function()
+                    local Context = Instance.new("Frame", ScreenGui)
+                    Context.BackgroundColor3 = Color3.fromRGB(20,20,20); Context.BorderColor3=Accent; Context.BorderSizePixel=1
+                    Context.Size = UDim2.new(0, 80, 0, 65); Context.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
+                    local CL = Instance.new("UIListLayout", Context); CL.SortOrder=Enum.SortOrder.LayoutOrder
+                    
+                    local function AddOpt(Name)
+                        local Opt = Instance.new("TextButton", Context); Opt.Size=UDim2.new(1,0,0,20); Opt.BackgroundTransparency=1; Opt.Text=Name; Opt.Font=Enum.Font.Code; Opt.TextSize=11; Opt.TextColor3=(Mode==Name and Accent or Color3.new(0.8,0.8,0.8))
+                        Opt.MouseButton1Click:Connect(function() Mode=Name; Context:Destroy() end)
+                    end
+                    AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
+                    
+                    -- Close on click away
+                    spawn(function()
+                        local input = UserInputService.InputBegan:Wait()
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then Context:Destroy() end
+                    end)
+                end)
+                
+                -- EXECUTION LOOP
+                local Toggled = false
+                UserInputService.InputBegan:Connect(function(i,p)
+                    if p then return end
+                    if i.KeyCode == Key and Mode == "Toggle" then
+                        Toggled = not Toggled
+                        if Config.Callback then Config.Callback(Toggled) end
+                    end
+                end)
+
+                RunService.RenderStepped:Connect(function()
+                    if Mode == "Hold" and Config.Callback then
+                        Config.Callback(UserInputService:IsKeyDown(Key or Enum.KeyCode.Unknown))
+                    elseif Mode == "Always" and Config.Callback then
+                        Config.Callback(true)
+                    end
+                end)
             end
 
             return PageFuncs
