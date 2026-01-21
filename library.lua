@@ -1,7 +1,8 @@
 --[[
-    Excell Internal Library | v3.2 (Context Menu)
-    - Feature: Right-Click Keybind for Modes (Toggle/Hold/Always)
-    - Fix: Preserves ALL previous features (Scale, Themes, etc.)
+    Excell Internal Library | v3.3 (Context Menu Fix)
+    - Fix: Right-Click Menu now appears on TOP of everything (ZIndex 100).
+    - Style: Deep Black + Neon Purple.
+    - Features: Tall Window, Sub-Tabs, Context Menu.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -16,7 +17,7 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- 1. CLEANUP
+    -- 1. CLEANUP OLD UI
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -40,28 +41,51 @@ function Library:CreateWindow(Config)
     MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     MainFrame.BorderColor3 = Accent
     MainFrame.BorderSizePixel = 1
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -275)
-    MainFrame.Size = UDim2.new(0, 600, 0, 550)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300)
+    MainFrame.Size = UDim2.new(0, 600, 0, 600) -- TALL 600px
     MainFrame.Active = true
     MainFrame.Draggable = true
 
-    -- (Decoration Code - Preserved)
+    -- DECORATION
     local TopBar = Instance.new("Frame", MainFrame)
-    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TopBar.BorderSizePixel=0; TopBar.Size=UDim2.new(1,0,0,25)
+    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    TopBar.BorderSizePixel = 0
+    TopBar.Size = UDim2.new(1, 0, 0, 25)
+
     local TitleLbl = Instance.new("TextLabel", TopBar)
-    TitleLbl.Text=Title; TitleLbl.Font=Enum.Font.Code; TitleLbl.TextColor3=Color3.new(1,1,1); TitleLbl.BackgroundTransparency=1; TitleLbl.Size=UDim2.new(1,-10,1,0); TitleLbl.Position=UDim2.new(0,10,0,0); TitleLbl.TextXAlignment=Enum.TextXAlignment.Left
-    local Line = Instance.new("Frame", TopBar); Line.BackgroundColor3=Accent; Line.BorderSizePixel=0; Line.Position=UDim2.new(0,0,1,0); Line.Size=UDim2.new(1,0,0,1)
+    TitleLbl.Text = Title
+    TitleLbl.Font = Enum.Font.Code
+    TitleLbl.TextColor3 = Color3.new(1,1,1)
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Size = UDim2.new(1, -10, 1, 0)
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Line = Instance.new("Frame", TopBar)
+    Line.BackgroundColor3 = Accent
+    Line.BorderSizePixel = 0
+    Line.Position = UDim2.new(0, 0, 1, 0)
+    Line.Size = UDim2.new(1, 0, 0, 1)
 
     -- TAB BAR
     local TabBar = Instance.new("Frame", MainFrame)
-    TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12); TabBar.BorderColor3=Color3.fromRGB(30,30,30); TabBar.BorderSizePixel=1
-    TabBar.Position = UDim2.new(0, 10, 0, 35); TabBar.Size = UDim2.new(1, -20, 0, 30)
-    local TabLayout = Instance.new("UIListLayout", TabBar); TabLayout.FillDirection=Enum.FillDirection.Horizontal; TabLayout.SortOrder=Enum.SortOrder.LayoutOrder
+    TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    TabBar.BorderSizePixel = 1
+    TabBar.Position = UDim2.new(0, 10, 0, 35)
+    TabBar.Size = UDim2.new(1, -20, 0, 30)
+    
+    local TabLayout = Instance.new("UIListLayout", TabBar)
+    TabLayout.FillDirection = Enum.FillDirection.Horizontal
+    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
     -- CONTENT
     local Content = Instance.new("Frame", MainFrame)
-    Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Content.BorderColor3=Color3.fromRGB(30,30,30); Content.BorderSizePixel=1
-    Content.Position = UDim2.new(0, 10, 0, 75); Content.Size = UDim2.new(1, -20, 1, -85)
+    Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    Content.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    Content.BorderSizePixel = 1
+    Content.Position = UDim2.new(0, 10, 0, 75)
+    Content.Size = UDim2.new(1, -20, 1, -85)
 
     local FirstTab = true
     local WindowFunctions = {}
@@ -70,18 +94,34 @@ function Library:CreateWindow(Config)
 
     function WindowFunctions:CreateTab(TabName)
         local TabBtn = Instance.new("TextButton", TabBar)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TabBtn.BorderColor3=Color3.fromRGB(30,30,30); TabBtn.BorderSizePixel=1
-        TabBtn.Size = UDim2.new(0, 120, 1, 0); TabBtn.Font = Enum.Font.Code; TabBtn.Text = TabName; TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100); TabBtn.TextSize = 12
+        TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+        TabBtn.BorderColor3 = Color3.fromRGB(30, 30, 30)
+        TabBtn.BorderSizePixel = 1
+        TabBtn.Size = UDim2.new(0, 120, 1, 0)
+        TabBtn.Font = Enum.Font.Code
+        TabBtn.Text = TabName
+        TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+        TabBtn.TextSize = 12
 
         local TabPage = Instance.new("Frame", Content)
-        TabPage.BackgroundTransparency = 1; TabPage.Size = UDim2.new(1, 0, 1, 0); TabPage.Visible = false
+        TabPage.BackgroundTransparency = 1
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.Visible = false
 
+        -- SIDEBAR (SubTabs)
         local Sidebar = Instance.new("Frame", TabPage)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Sidebar.BorderColor3=Color3.fromRGB(30,30,30); Sidebar.BorderSizePixel=1; Sidebar.Size=UDim2.new(0,140,1,0)
-        local SidebarList = Instance.new("UIListLayout", Sidebar); SidebarList.SortOrder=Enum.SortOrder.LayoutOrder
+        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+        Sidebar.BorderColor3 = Color3.fromRGB(30, 30, 30)
+        Sidebar.BorderSizePixel = 1
+        Sidebar.Size = UDim2.new(0, 140, 1, 0)
+        local SidebarList = Instance.new("UIListLayout", Sidebar)
+        SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
 
+        -- ITEMS AREA
         local Items = Instance.new("Frame", TabPage)
-        Items.BackgroundTransparency=1; Items.Position=UDim2.new(0,150,0,10); Items.Size=UDim2.new(1,-160,1,-20)
+        Items.BackgroundTransparency = 1
+        Items.Position = UDim2.new(0, 150, 0, 10)
+        Items.Size = UDim2.new(1, -160, 1, -20)
 
         if FirstTab then TabBtn.TextColor3=Accent; TabPage.Visible=true; FirstTab=false end
 
@@ -96,11 +136,21 @@ function Library:CreateWindow(Config)
 
         function TabFuncs:CreateSubTab(Name)
             local SubBtn = Instance.new("TextButton", Sidebar)
-            SubBtn.BackgroundTransparency=1; SubBtn.Size=UDim2.new(1,0,0,25); SubBtn.Font=Enum.Font.Code; SubBtn.Text=" "..Name; SubBtn.TextColor3=Color3.fromRGB(100,100,100); SubBtn.TextSize=12; SubBtn.TextXAlignment=Enum.TextXAlignment.Left
+            SubBtn.BackgroundTransparency = 1
+            SubBtn.Size = UDim2.new(1, 0, 0, 25)
+            SubBtn.Font = Enum.Font.Code
+            SubBtn.Text = " " .. Name
+            SubBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+            SubBtn.TextSize = 12
+            SubBtn.TextXAlignment = Enum.TextXAlignment.Left
 
             local Container = Instance.new("ScrollingFrame", Items)
-            Container.BackgroundTransparency=1; Container.Size=UDim2.new(1,0,1,0); Container.Visible=false; Container.ScrollBarThickness=2
-            local List = Instance.new("UIListLayout", Container); List.Padding=UDim.new(0,5)
+            Container.BackgroundTransparency = 1
+            Container.Size = UDim2.new(1, 0, 1, 0)
+            Container.Visible = false
+            Container.ScrollBarThickness = 2
+            local List = Instance.new("UIListLayout", Container)
+            List.Padding = UDim.new(0, 5)
 
             if FirstSub then SubBtn.TextColor3=Color3.new(1,1,1); Container.Visible=true; FirstSub=false end
 
@@ -138,17 +188,17 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND (Updated with Context Menu)
+            -- KEYBIND WITH CONTEXT MENU
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-60,0.5,-9); B.Size=UDim2.new(0,50,0,18); B.Text=Config.Default and Config.Default.Name or "None"; B.TextColor3=Color3.fromRGB(150,150,150); B.Font=Enum.Font.Code; B.TextSize=11
                 
-                local Mode = "Toggle" -- Default
+                local Mode = "Toggle" -- Default Mode
                 local Key = Config.Default
                 local Binding = false
 
-                -- BINDING LOGIC
+                -- Left Click: Bind Key
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
@@ -157,29 +207,52 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- CONTEXT MENU (Right Click)
+                -- Right Click: Open Context Menu
                 B.MouseButton2Click:Connect(function()
-                    local Context = Instance.new("Frame", ScreenGui)
-                    Context.BackgroundColor3 = Color3.fromRGB(20,20,20); Context.BorderColor3=Accent; Context.BorderSizePixel=1
-                    Context.Size = UDim2.new(0, 80, 0, 65); Context.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
-                    local CL = Instance.new("UIListLayout", Context); CL.SortOrder=Enum.SortOrder.LayoutOrder
+                    -- Create Menu attached to ScreenGui (High ZIndex)
+                    local Menu = Instance.new("Frame", ScreenGui)
+                    Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+                    Menu.BorderColor3 = Accent
+                    Menu.BorderSizePixel = 1
+                    Menu.Size = UDim2.new(0, 100, 0, 70)
+                    Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
+                    Menu.ZIndex = 100 -- FORCE TOP
+                    
+                    local Layout = Instance.new("UIListLayout", Menu)
+                    Layout.SortOrder = Enum.SortOrder.LayoutOrder
                     
                     local function AddOpt(Name)
-                        local Opt = Instance.new("TextButton", Context); Opt.Size=UDim2.new(1,0,0,20); Opt.BackgroundTransparency=1; Opt.Text=Name; Opt.Font=Enum.Font.Code; Opt.TextSize=11; Opt.TextColor3=(Mode==Name and Accent or Color3.new(0.8,0.8,0.8))
-                        Opt.MouseButton1Click:Connect(function() Mode=Name; Context:Destroy() end)
+                        local Btn = Instance.new("TextButton", Menu)
+                        Btn.Size = UDim2.new(1, 0, 0, 22)
+                        Btn.BackgroundTransparency = 1
+                        Btn.Text = Name
+                        Btn.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
+                        Btn.Font = Enum.Font.Code
+                        Btn.TextSize = 12
+                        Btn.ZIndex = 101
+                        
+                        Btn.MouseButton1Click:Connect(function()
+                            Mode = Name
+                            Menu:Destroy()
+                        end)
                     end
-                    AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
                     
-                    -- Close on click away
+                    AddOpt("Toggle")
+                    AddOpt("Hold")
+                    AddOpt("Always")
+                    
+                    -- Close if clicked away
                     spawn(function()
                         local input = UserInputService.InputBegan:Wait()
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then Context:Destroy() end
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            if Menu then Menu:Destroy() end
+                        end
                     end)
                 end)
-                
-                -- EXECUTION LOOP
+
+                -- Key Logic Loop
                 local Toggled = false
-                UserInputService.InputBegan:Connect(function(i,p)
+                UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
                     if i.KeyCode == Key and Mode == "Toggle" then
                         Toggled = not Toggled
