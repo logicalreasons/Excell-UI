@@ -1,8 +1,8 @@
 --[[
-    Excell Internal Library | v4.1 (Clean Text)
-    - Change: Removed mode text (e.g. "[Hold]") from buttons.
-    - Logic: Modes still work, just hidden visually.
-    - Fixes: Includes all previous fixes (Context Menu, Scale, etc.)
+    Excell Internal Library | v4.2 (Strict Clean Text)
+    - Fix: Removed ALL code that could possibly write "[Hold]" or "[Always]".
+    - Behavior: Button ONLY shows "Q" (or Key Name).
+    - Features: Right-Click menu works in background.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -181,7 +181,7 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND (CLEAN TEXT)
+            -- KEYBIND (STRICT CLEAN TEXT)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -192,18 +192,21 @@ function Library:CreateWindow(Config)
                 local Key = Config.Default
                 local Binding = false
 
-                -- CLEAN TEXT UPDATE
+                -- CLEAN TEXT FUNCTION
                 local function UpdateText()
                     local KeyName = Key and Key.Name or "None"
-                    B.Text = KeyName -- VISUAL CHANGE: No more [Hold]
+                    B.Text = KeyName -- STRICT: KEY NAME ONLY
                 end
-                UpdateText()
+                UpdateText() -- Run once at start
 
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
                     if i.UserInputType==Enum.UserInputType.Keyboard then 
                         Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false 
+                        UpdateText()
+                    elseif i.UserInputType==Enum.UserInputType.MouseButton1 then
+                        Binding=false; B.TextColor3=Color3.fromRGB(150,150,150)
                         UpdateText()
                     end 
                 end)
@@ -217,8 +220,9 @@ function Library:CreateWindow(Config)
                     
                     local Header = Instance.new("Frame", Menu); Header.BackgroundColor3=Color3.fromRGB(30,30,30); Header.BorderSizePixel=0; Header.Size=UDim2.new(1,0,0,20); Header.ZIndex=101
                     local HeaderText = Instance.new("TextLabel", Header); HeaderText.BackgroundTransparency=1; HeaderText.Size=UDim2.new(1,-20,1,0); HeaderText.Position=UDim2.new(0,5,0,0); HeaderText.Text="Mode"; HeaderText.Font=Enum.Font.Code; HeaderText.TextSize=12; HeaderText.TextColor3=Accent; HeaderText.TextXAlignment=Enum.TextXAlignment.Left; HeaderText.ZIndex=102
-                    local CloseBtn = Instance.new("TextButton", Header); CloseBtn.BackgroundTransparency=1; CloseBtn.Text="X"; CloseBtn.TextColor3=Color3.fromRGB(255,100,100); CloseBtn.Size=UDim2.new(0,20,1,0); CloseBtn.Position=UDim2.new(1,-20,0,0); CloseBtn.Font=Enum.Font.Code; CloseBtn.TextSize=12; CloseBtn.ZIndex=103
                     
+                    -- [X] CLOSE BUTTON
+                    local CloseBtn = Instance.new("TextButton", Header); CloseBtn.BackgroundTransparency=1; CloseBtn.Text="X"; CloseBtn.TextColor3=Color3.fromRGB(255,100,100); CloseBtn.Size=UDim2.new(0,20,1,0); CloseBtn.Position=UDim2.new(1,-20,0,0); CloseBtn.Font=Enum.Font.Code; CloseBtn.TextSize=12; CloseBtn.ZIndex=103
                     CloseBtn.MouseButton1Click:Connect(function() Menu:Destroy() Library.ActiveMenu=nil end)
 
                     local OptionHolder = Instance.new("Frame", Menu); OptionHolder.BackgroundTransparency=1; OptionHolder.Position=UDim2.new(0,0,0,22); OptionHolder.Size=UDim2.new(1,0,1,-22); OptionHolder.ZIndex=101
@@ -231,7 +235,7 @@ function Library:CreateWindow(Config)
                         Opt.MouseButton1Click:Connect(function()
                             if Config.Callback then Config.Callback(false) end
                             Mode = Name
-                            -- UpdateText() -- Removed to keep button clean
+                            UpdateText() -- Ensures it STAYS showing just the key name
                             Menu:Destroy()
                             Library.ActiveMenu = nil
                         end)
