@@ -1,12 +1,10 @@
 --[[
-    Excell Internal Library | v4.5 (Fixed & Restored)
-    - Fix: Restored Toggle, Slider, and Keybind functions.
-    - Feature: Added Dropdowns.
-    - UI: Clean Keybinds, Big Title, X Button.
+    Excell Internal Library | v4.6 (Emergency Fix)
+    - Fix: Restored missing 'return' statement causing menu failure.
+    - Features: Dropdowns, Sliders, Toggles, Clean Keybinds.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -18,10 +16,12 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
+    -- Cleanup Old UI
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
 
+    -- Create GUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
@@ -44,6 +44,7 @@ function Library:CreateWindow(Config)
     MainFrame.Active = true
     MainFrame.Draggable = true
 
+    -- Top Bar
     local TopBar = Instance.new("Frame", MainFrame)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     TopBar.BorderSizePixel = 0
@@ -57,7 +58,7 @@ function Library:CreateWindow(Config)
     TitleLbl.Size = UDim2.new(1, -10, 1, 0)
     TitleLbl.Position = UDim2.new(0, 10, 0, 0)
     TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLbl.TextSize = 14 
+    TitleLbl.TextSize = 14
 
     local Line = Instance.new("Frame", TopBar)
     Line.BackgroundColor3 = Accent
@@ -65,6 +66,7 @@ function Library:CreateWindow(Config)
     Line.Position = UDim2.new(0, 0, 1, 0)
     Line.Size = UDim2.new(1, 0, 0, 1)
 
+    -- Tabs
     local TabBar = Instance.new("Frame", MainFrame)
     TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -156,7 +158,7 @@ function Library:CreateWindow(Config)
 
             local PageFuncs = {}
 
-            -- 1. TOGGLE
+            -- TOGGLE
             function PageFuncs:CreateToggle(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local B = Instance.new("TextButton", F); B.BackgroundTransparency=1; B.Size=UDim2.new(1,0,1,0); B.Font=Enum.Font.Code; B.Text=Config.Name; B.TextColor3=Color3.fromRGB(200,200,200); B.TextSize=12; B.TextXAlignment=Enum.TextXAlignment.Left
@@ -165,7 +167,7 @@ function Library:CreateWindow(Config)
                 B.MouseButton1Click:Connect(function() Fill.Visible=not Fill.Visible; if Config.Callback then Config.Callback(Fill.Visible) end end)
             end
 
-            -- 2. SLIDER
+            -- SLIDER
             function PageFuncs:CreateSlider(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,35)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -182,7 +184,7 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- 3. DROPDOWN (NEW)
+            -- DROPDOWN
             function PageFuncs:CreateDropdown(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,20); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -193,20 +195,36 @@ function Library:CreateWindow(Config)
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
                 
                 MainBtn.MouseButton1Click:Connect(function()
-                    Open = not Open; Scroll.Visible = Open
-                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end
+                    Open = not Open
+                    Scroll.Visible = Open
+                    if Open then
+                        F.Size = UDim2.new(1, 0, 0, 50 + ListSize)
+                    else
+                        F.Size = UDim2.new(1, 0, 0, 50)
+                    end
                 end)
                 
                 for _, Option in pairs(Config.Options) do
-                    local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
+                    local OptBtn = Instance.new("TextButton", Scroll)
+                    OptBtn.Size = UDim2.new(1, 0, 0, 20)
+                    OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+                    OptBtn.Text = Option
+                    OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    OptBtn.Font = Enum.Font.Code
+                    OptBtn.TextSize = 11
+                    OptBtn.BorderSizePixel = 0
+                    
                     OptBtn.MouseButton1Click:Connect(function()
-                        Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); MainBtn.Text = Option
+                        Open = false
+                        Scroll.Visible = false
+                        F.Size = UDim2.new(1, 0, 0, 50)
+                        MainBtn.Text = Option
                         if Config.Callback then Config.Callback(Option) end
                     end)
                 end
             end
 
-            -- 4. KEYBIND
+            -- KEYBIND
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -218,8 +236,11 @@ function Library:CreateWindow(Config)
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
-                    if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false; UpdateText()
-                    elseif i.UserInputType==Enum.UserInputType.MouseButton1 then Binding=false; B.TextColor3=Color3.fromRGB(150,150,150); UpdateText() end 
+                    if i.UserInputType==Enum.UserInputType.Keyboard then 
+                        Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false; UpdateText()
+                    elseif i.UserInputType==Enum.UserInputType.MouseButton1 then
+                        Binding=false; B.TextColor3=Color3.fromRGB(150,150,150); UpdateText()
+                    end 
                 end)
 
                 B.MouseButton2Click:Connect(function()
@@ -247,7 +268,6 @@ function Library:CreateWindow(Config)
         end
         return TabFuncs
     end
-    function Library:Watermark(t) end
-    return WindowFunctions, Library
+    return WindowFunctions
 end
 return Library
