@@ -1,6 +1,6 @@
 --[[
-    Excell Internal Library | v3.3 (Context Menu Fix)
-    - Fix: Right-Click Menu now appears on TOP of everything (ZIndex 100).
+    Excell Internal Library | v3.4 (Context Menu Fix)
+    - Fix: Prevents multiple Right-Click menus from stacking.
     - Style: Deep Black + Neon Purple.
     - Features: Tall Window, Sub-Tabs, Context Menu.
 ]]
@@ -188,7 +188,7 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND WITH CONTEXT MENU
+            -- KEYBIND WITH FIXED CONTEXT MENU
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -207,10 +207,16 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- Right Click: Open Context Menu
+                -- Right Click: Open Context Menu (FIXED)
                 B.MouseButton2Click:Connect(function()
-                    -- Create Menu attached to ScreenGui (High ZIndex)
+                    -- 1. CLEANUP PREVIOUS MENUS
+                    if ScreenGui:FindFirstChild("ContextMenu") then
+                        ScreenGui.ContextMenu:Destroy()
+                    end
+
+                    -- 2. CREATE NEW MENU
                     local Menu = Instance.new("Frame", ScreenGui)
+                    Menu.Name = "ContextMenu" -- Named for easy cleanup
                     Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
                     Menu.BorderColor3 = Accent
                     Menu.BorderSizePixel = 1
