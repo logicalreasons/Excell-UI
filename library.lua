@@ -1,8 +1,8 @@
 --[[
-    Excell Internal Library | v3.4 (Context Menu Fix)
-    - Fix: Prevents multiple Right-Click menus from stacking.
-    - Style: Deep Black + Neon Purple.
-    - Features: Tall Window, Sub-Tabs, Context Menu.
+    Excell Internal Library | v3.5 (Final Context Fix)
+    - Fix: STRICT single-instance Context Menu (No stacking).
+    - Style: Deep Black + Neon Purple (Juju Style).
+    - Features: Tall Window, Sub-Tabs, FOV, Scale.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -12,6 +12,7 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
 local Library = {}
+Library.ActiveMenu = nil -- TRACKER FOR OPEN MENUS
 
 function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
@@ -188,17 +189,17 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND WITH FIXED CONTEXT MENU
+            -- KEYBIND (FIXED CONTEXT MENU)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-60,0.5,-9); B.Size=UDim2.new(0,50,0,18); B.Text=Config.Default and Config.Default.Name or "None"; B.TextColor3=Color3.fromRGB(150,150,150); B.Font=Enum.Font.Code; B.TextSize=11
                 
-                local Mode = "Toggle" -- Default Mode
+                local Mode = "Toggle"
                 local Key = Config.Default
                 local Binding = false
 
-                -- Left Click: Bind Key
+                -- Left Click: Bind
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
@@ -207,56 +208,56 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- Right Click: Open Context Menu (FIXED)
+                -- Right Click: Context Menu (FIXED)
                 B.MouseButton2Click:Connect(function()
-                    -- 1. CLEANUP PREVIOUS MENUS
-                    if ScreenGui:FindFirstChild("ContextMenu") then
-                        ScreenGui.ContextMenu:Destroy()
+                    -- DESTROY ANY EXISTING MENU FIRST
+                    if Library.ActiveMenu then 
+                        Library.ActiveMenu:Destroy() 
+                        Library.ActiveMenu = nil
                     end
 
-                    -- 2. CREATE NEW MENU
                     local Menu = Instance.new("Frame", ScreenGui)
-                    Menu.Name = "ContextMenu" -- Named for easy cleanup
                     Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
                     Menu.BorderColor3 = Accent
                     Menu.BorderSizePixel = 1
-                    Menu.Size = UDim2.new(0, 100, 0, 70)
+                    Menu.Size = UDim2.new(0, 80, 0, 65)
                     Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
-                    Menu.ZIndex = 100 -- FORCE TOP
-                    
-                    local Layout = Instance.new("UIListLayout", Menu)
-                    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+                    Menu.ZIndex = 100 -- Top Layer
+                    Library.ActiveMenu = Menu -- REGISTER MENU
+
+                    local ML = Instance.new("UIListLayout", Menu); ML.SortOrder=Enum.SortOrder.LayoutOrder
                     
                     local function AddOpt(Name)
-                        local Btn = Instance.new("TextButton", Menu)
-                        Btn.Size = UDim2.new(1, 0, 0, 22)
-                        Btn.BackgroundTransparency = 1
-                        Btn.Text = Name
-                        Btn.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
-                        Btn.Font = Enum.Font.Code
-                        Btn.TextSize = 12
-                        Btn.ZIndex = 101
+                        local Opt = Instance.new("TextButton", Menu)
+                        Opt.Size = UDim2.new(1, 0, 0, 21)
+                        Opt.BackgroundTransparency = 1
+                        Opt.Text = Name
+                        Opt.Font = Enum.Font.Code
+                        Opt.TextSize = 12
+                        Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
+                        Opt.ZIndex = 101
                         
-                        Btn.MouseButton1Click:Connect(function()
+                        Opt.MouseButton1Click:Connect(function()
                             Mode = Name
                             Menu:Destroy()
+                            Library.ActiveMenu = nil
                         end)
                     end
+                    AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
                     
-                    AddOpt("Toggle")
-                    AddOpt("Hold")
-                    AddOpt("Always")
-                    
-                    -- Close if clicked away
+                    -- Close on click away
                     spawn(function()
                         local input = UserInputService.InputBegan:Wait()
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                            if Menu then Menu:Destroy() end
+                            if Library.ActiveMenu then 
+                                Library.ActiveMenu:Destroy() 
+                                Library.ActiveMenu = nil
+                            end
                         end
                     end)
                 end)
-
-                -- Key Logic Loop
+                
+                -- Key Logic
                 local Toggled = false
                 UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
