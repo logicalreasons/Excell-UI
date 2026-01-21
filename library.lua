@@ -1,7 +1,8 @@
 --[[
-    Excell Internal Library | v4.0 (Interaction Fix)
-    - Fix: Removed "Click Away to Close" conflict.
-    - Usage: Close menu using [X] or selecting an option.
+    Excell Internal Library | v4.1 (Clean Text)
+    - Change: Removed mode text (e.g. "[Hold]") from buttons.
+    - Logic: Modes still work, just hidden visually.
+    - Fixes: Includes all previous fixes (Context Menu, Scale, etc.)
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -17,7 +18,6 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- 1. CLEANUP
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -27,7 +27,6 @@ function Library:CreateWindow(Config)
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 
-    -- 2. SCALE WRAPPER
     local ScaleFrame = Instance.new("Frame", ScreenGui)
     ScaleFrame.Name = "Scale"
     ScaleFrame.BackgroundTransparency = 1
@@ -35,7 +34,6 @@ function Library:CreateWindow(Config)
     local UIScale = Instance.new("UIScale", ScaleFrame)
     UIScale.Scale = 1
 
-    -- 3. MAIN WINDOW
     local MainFrame = Instance.new("Frame", ScaleFrame)
     MainFrame.Name = "Main"
     MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
@@ -46,7 +44,6 @@ function Library:CreateWindow(Config)
     MainFrame.Active = true
     MainFrame.Draggable = true
 
-    -- DECORATION
     local TopBar = Instance.new("Frame", MainFrame)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     TopBar.BorderSizePixel = 0
@@ -67,7 +64,6 @@ function Library:CreateWindow(Config)
     Line.Position = UDim2.new(0, 0, 1, 0)
     Line.Size = UDim2.new(1, 0, 0, 1)
 
-    -- TAB BAR
     local TabBar = Instance.new("Frame", MainFrame)
     TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -79,7 +75,6 @@ function Library:CreateWindow(Config)
     TabLayout.FillDirection = Enum.FillDirection.Horizontal
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    -- CONTENT
     local Content = Instance.new("Frame", MainFrame)
     Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     Content.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -186,7 +181,7 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND (WITH X BUTTON + SAFE CLICK)
+            -- KEYBIND (CLEAN TEXT)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -196,17 +191,14 @@ function Library:CreateWindow(Config)
                 local Mode = "Toggle"
                 local Key = Config.Default
                 local Binding = false
-                local Toggled = false
 
-                -- Update Text
+                -- CLEAN TEXT UPDATE
                 local function UpdateText()
                     local KeyName = Key and Key.Name or "None"
-                    local ModeText = (Mode == "Toggle" and "") or (Mode == "Hold" and " [Hold]") or (Mode == "Always" and " [Always]")
-                    B.Text = KeyName .. ModeText
+                    B.Text = KeyName -- VISUAL CHANGE: No more [Hold]
                 end
                 UpdateText()
 
-                -- Left Click: Bind
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
@@ -216,86 +208,30 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- Right Click: Context Menu
                 B.MouseButton2Click:Connect(function()
-                    -- DELETE OLD MENU FIRST
-                    if Library.ActiveMenu then 
-                        Library.ActiveMenu:Destroy() 
-                        Library.ActiveMenu = nil
-                    end
+                    if Library.ActiveMenu then Library.ActiveMenu:Destroy() Library.ActiveMenu = nil end
 
-                    -- CREATE MENU FRAME
                     local Menu = Instance.new("Frame", ScreenGui)
-                    Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                    Menu.BorderColor3 = Accent
-                    Menu.BorderSizePixel = 1
-                    Menu.Size = UDim2.new(0, 100, 0, 95) 
-                    Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
-                    Menu.ZIndex = 100
+                    Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Menu.BorderColor3 = Accent; Menu.BorderSizePixel = 1; Menu.Size = UDim2.new(0, 100, 0, 95); Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y); Menu.ZIndex = 100
                     Library.ActiveMenu = Menu
                     
-                    -- TITLE BAR
-                    local Header = Instance.new("Frame", Menu)
-                    Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                    Header.BorderSizePixel = 0
-                    Header.Size = UDim2.new(1, 0, 0, 20)
-                    Header.ZIndex = 101
-
-                    local HeaderText = Instance.new("TextLabel", Header)
-                    HeaderText.BackgroundTransparency = 1
-                    HeaderText.Size = UDim2.new(1, -20, 1, 0)
-                    HeaderText.Position = UDim2.new(0, 5, 0, 0)
-                    HeaderText.Text = "Mode"
-                    HeaderText.Font = Enum.Font.Code
-                    HeaderText.TextSize = 12
-                    HeaderText.TextColor3 = Accent
-                    HeaderText.TextXAlignment = Enum.TextXAlignment.Left
-                    HeaderText.ZIndex = 102
-
-                    -- [X] CLOSE BUTTON
-                    local CloseBtn = Instance.new("TextButton", Header)
-                    CloseBtn.BackgroundTransparency = 1
-                    CloseBtn.Text = "X"
-                    CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-                    CloseBtn.Size = UDim2.new(0, 20, 1, 0)
-                    CloseBtn.Position = UDim2.new(1, -20, 0, 0)
-                    CloseBtn.Font = Enum.Font.Code
-                    CloseBtn.TextSize = 12
-                    CloseBtn.ZIndex = 103
+                    local Header = Instance.new("Frame", Menu); Header.BackgroundColor3=Color3.fromRGB(30,30,30); Header.BorderSizePixel=0; Header.Size=UDim2.new(1,0,0,20); Header.ZIndex=101
+                    local HeaderText = Instance.new("TextLabel", Header); HeaderText.BackgroundTransparency=1; HeaderText.Size=UDim2.new(1,-20,1,0); HeaderText.Position=UDim2.new(0,5,0,0); HeaderText.Text="Mode"; HeaderText.Font=Enum.Font.Code; HeaderText.TextSize=12; HeaderText.TextColor3=Accent; HeaderText.TextXAlignment=Enum.TextXAlignment.Left; HeaderText.ZIndex=102
+                    local CloseBtn = Instance.new("TextButton", Header); CloseBtn.BackgroundTransparency=1; CloseBtn.Text="X"; CloseBtn.TextColor3=Color3.fromRGB(255,100,100); CloseBtn.Size=UDim2.new(0,20,1,0); CloseBtn.Position=UDim2.new(1,-20,0,0); CloseBtn.Font=Enum.Font.Code; CloseBtn.TextSize=12; CloseBtn.ZIndex=103
                     
-                    CloseBtn.MouseButton1Click:Connect(function()
-                        Menu:Destroy()
-                        Library.ActiveMenu = nil
-                    end)
+                    CloseBtn.MouseButton1Click:Connect(function() Menu:Destroy() Library.ActiveMenu=nil end)
 
-                    -- OPTIONS CONTAINER
-                    local OptionHolder = Instance.new("Frame", Menu)
-                    OptionHolder.BackgroundTransparency = 1
-                    OptionHolder.Position = UDim2.new(0, 0, 0, 22)
-                    OptionHolder.Size = UDim2.new(1, 0, 1, -22)
-                    OptionHolder.ZIndex = 101
-                    
-                    local Layout = Instance.new("UIListLayout", OptionHolder)
-                    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+                    local OptionHolder = Instance.new("Frame", Menu); OptionHolder.BackgroundTransparency=1; OptionHolder.Position=UDim2.new(0,0,0,22); OptionHolder.Size=UDim2.new(1,0,1,-22); OptionHolder.ZIndex=101
+                    local Layout = Instance.new("UIListLayout", OptionHolder); Layout.SortOrder=Enum.SortOrder.LayoutOrder
                     
                     local function AddOpt(Name)
                         local Opt = Instance.new("TextButton", OptionHolder)
-                        Opt.Size = UDim2.new(1, 0, 0, 22)
-                        Opt.BackgroundTransparency = 1
-                        Opt.Text = Name
-                        Opt.Font = Enum.Font.Code
-                        Opt.TextSize = 12
-                        Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200)
-                        Opt.ZIndex = 102
+                        Opt.Size = UDim2.new(1, 0, 0, 22); Opt.BackgroundTransparency = 1; Opt.Text = Name; Opt.Font = Enum.Font.Code; Opt.TextSize = 12; Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200); Opt.ZIndex = 102
                         
                         Opt.MouseButton1Click:Connect(function()
-                            if Config.Callback then Config.Callback(false) end -- Reset state
-                            
-                            -- IMPORTANT: Reset internal toggle state too
-                            Toggled = false 
-                            
+                            if Config.Callback then Config.Callback(false) end
                             Mode = Name
-                            UpdateText()
+                            -- UpdateText() -- Removed to keep button clean
                             Menu:Destroy()
                             Library.ActiveMenu = nil
                         end)
@@ -303,7 +239,7 @@ function Library:CreateWindow(Config)
                     AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
                 end)
                 
-                -- Logic
+                local Toggled = false
                 UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
                     if i.KeyCode == Key and Mode == "Toggle" then
