@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v3.9 (Manual Close Fix)
-    - Fix: Context Menu no longer auto-closes when you click it.
-    - Feature: Added 'X' button to Context Menu.
+    Excell Internal Library | v3.9 (Manual Close + X Button)
+    - Fix: Context Menu stays open until you close it.
+    - Feature: Added [X] button to right-click menu.
     - Style: Deep Black + Neon Purple.
 ]]
 
