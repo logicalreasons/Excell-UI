@@ -1,8 +1,8 @@
 --[[
-    Excell Internal Library | v3.7 (State Fix)
-    - Fix: Keybind Mode is now visible on the button (e.g., "Q [Hold]").
-    - Fix: Context Menu remembers your selection correctly.
-    - Features: Juju Style, Anti-Stack, Scale.
+    Excell Internal Library | v3.8 (Logic Fixes)
+    - Fix: Keybinds no longer get stuck when switching modes.
+    - Fix: Right-click menu is robust and non-stacking.
+    - Style: Deep Black + Neon Purple.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -12,13 +12,13 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
 local Library = {}
-Library.ActiveMenu = nil -- Global tracker
+Library.ActiveMenu = nil -- Global Menu Tracker
 
 function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- 1. DESTROY OLD UI
+    -- 1. CLEANUP
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -109,7 +109,6 @@ function Library:CreateWindow(Config)
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.Visible = false
 
-        -- SIDEBAR
         local Sidebar = Instance.new("Frame", TabPage)
         Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
         Sidebar.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -118,7 +117,6 @@ function Library:CreateWindow(Config)
         local SidebarList = Instance.new("UIListLayout", Sidebar)
         SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
 
-        -- ITEMS
         local Items = Instance.new("Frame", TabPage)
         Items.BackgroundTransparency = 1
         Items.Position = UDim2.new(0, 150, 0, 10)
@@ -189,28 +187,26 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND (FIXED STATE)
+            -- KEYBIND (FIXED LOGIC)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
-                local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-70,0.5,-9); B.Size=UDim2.new(0,60,0,18); 
+                local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-70,0.5,-9); B.Size=UDim2.new(0,60,0,18)
                 B.TextColor3=Color3.fromRGB(150,150,150); B.Font=Enum.Font.Code; B.TextSize=11
                 
                 local Mode = "Toggle"
                 local Key = Config.Default
                 local Binding = false
+                local Toggled = false
 
-                -- Helper to update button text
+                -- Helper to visually update button text
                 local function UpdateText()
                     local KeyName = Key and Key.Name or "None"
-                    -- Show mode as [T], [H], [A] or full text if space allows. 
-                    -- Using short bracket notation for clean Juju look.
-                    local ModeShort = (Mode == "Toggle" and "") or (Mode == "Hold" and " [Hold]") or (Mode == "Always" and " [Always]")
-                    B.Text = KeyName .. ModeShort
+                    local ModeText = (Mode == "Toggle" and "") or (Mode == "Hold" and " [Hold]") or (Mode == "Always" and " [Always]")
+                    B.Text = KeyName .. ModeText
                 end
                 UpdateText()
 
-                -- Left Click: Bind
                 B.MouseButton1Click:Connect(function() 
                     Binding=true; B.Text="..."; B.TextColor3=Accent 
                     local i = UserInputService.InputBegan:Wait()
@@ -220,7 +216,6 @@ function Library:CreateWindow(Config)
                     end 
                 end)
 
-                -- Right Click: Context Menu
                 B.MouseButton2Click:Connect(function()
                     if Library.ActiveMenu then Library.ActiveMenu:Destroy() Library.ActiveMenu=nil end
 
@@ -232,14 +227,15 @@ function Library:CreateWindow(Config)
                     
                     local function AddOpt(Name)
                         local Opt = Instance.new("TextButton", Menu)
-                        Opt.Size = UDim2.new(1, 0, 0, 22); Opt.BackgroundTransparency = 1; Opt.Text = Name; Opt.Font = Enum.Font.Code; Opt.TextSize = 12; Opt.ZIndex = 101
-                        
-                        -- HIGHLIGHT ACTIVE SELECTION
-                        if Mode == Name then Opt.TextColor3 = Accent else Opt.TextColor3 = Color3.fromRGB(200, 200, 200) end
+                        Opt.Size = UDim2.new(1, 0, 0, 21); Opt.BackgroundTransparency = 1; Opt.Text = Name; Opt.Font = Enum.Font.Code; Opt.TextSize = 12; Opt.TextColor3 = (Mode==Name and Accent or Color3.fromRGB(200, 200, 200)); Opt.ZIndex = 101
                         
                         Opt.MouseButton1Click:Connect(function()
+                            -- CRITICAL FIX: RESET STATE WHEN SWITCHING MODES
+                            if Config.Callback then Config.Callback(false) end
+                            Toggled = false
+                            
                             Mode = Name
-                            UpdateText() -- UPDATE BUTTON TEXT VISUALLY
+                            UpdateText()
                             Menu:Destroy()
                             Library.ActiveMenu = nil
                         end)
@@ -254,8 +250,6 @@ function Library:CreateWindow(Config)
                     end)
                 end)
                 
-                -- Input Logic
-                local Toggled = false
                 UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
                     if i.KeyCode == Key and Mode == "Toggle" then
