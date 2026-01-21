@@ -1,7 +1,8 @@
 --[[
-    Excell Internal Library | v2.5 (Tall & Mini-Tabs Fixed)
-    - Window: 600px Height (Vertical Layout)
-    - Navigation: Sidebar Sub-Tabs
+    Excell Internal Library | v2.6 (Visual Overhaul)
+    - Style: "Neon" Internal (Glow + Rounded Corners)
+    - Colors: Deep Dark Theme
+    - Fixes: Smooth sizing and layout
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -16,7 +17,7 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(138, 43, 226)
     
-    -- 1. CLEANUP (Removes old menu instantly)
+    -- 1. CLEANUP
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v2") then
         game:GetService("CoreGui").ExcellInternal_v2:Destroy()
     end
@@ -25,51 +26,56 @@ function Library:CreateWindow(Config)
     ScreenGui.Name = "ExcellInternal_v2"
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-    
-    -- 2. MAIN FRAME (Forced Tall)
+
+    -- 2. MAIN FRAME (Visual Upgrade)
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
-    MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    MainFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
-    MainFrame.BorderSizePixel = 1
-    MainFrame.Position = UDim2.new(0.5, -325, 0.5, -300) -- Centered
-    MainFrame.Size = UDim2.new(0, 650, 0, 600) -- [[ TALLER SIZE HERE ]]
+    MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12) -- Deep Dark
+    MainFrame.Position = UDim2.new(0.5, -325, 0.5, -300)
+    MainFrame.Size = UDim2.new(0, 650, 0, 600)
     MainFrame.Active = true
     MainFrame.Draggable = true
+    
+    -- Rounded Corners
+    local MainCorner = Instance.new("UICorner", MainFrame)
+    MainCorner.CornerRadius = UDim.new(0, 6)
+    
+    -- Neon Stroke (Glow Effect)
+    local MainStroke = Instance.new("UIStroke", MainFrame)
+    MainStroke.Thickness = 2
+    MainStroke.Color = Accent
+    MainStroke.Transparency = 0.2
 
-    -- Decoration
-    local TopLine = Instance.new("Frame", MainFrame)
-    TopLine.BackgroundColor3 = Accent
-    TopLine.BorderSizePixel = 0
-    TopLine.Size = UDim2.new(1, 0, 0, 2)
-
+    -- Title Area
     local TitleLabel = Instance.new("TextLabel", MainFrame)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 10, 0, 5)
+    TitleLabel.Position = UDim2.new(0, 15, 0, 10)
     TitleLabel.Size = UDim2.new(0, 200, 0, 20)
-    TitleLabel.Font = Enum.Font.Code
+    TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.Text = Title
-    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLabel.TextSize = 13
+    TitleLabel.TextColor3 = Accent
+    TitleLabel.TextSize = 16
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
     -- 3. TOP TAB BAR
     local TabBar = Instance.new("Frame", MainFrame)
-    TabBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    TabBar.BorderSizePixel = 0
-    TabBar.Position = UDim2.new(0, 0, 0, 30)
-    TabBar.Size = UDim2.new(1, 0, 0, 35)
+    TabBar.BackgroundTransparency = 1
+    TabBar.Position = UDim2.new(0, 10, 0, 40)
+    TabBar.Size = UDim2.new(1, -20, 0, 35)
     
     local TabLayout = Instance.new("UIListLayout", TabBar)
     TabLayout.FillDirection = Enum.FillDirection.Horizontal
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabLayout.Padding = UDim.new(0, 10)
 
-    -- 4. CONTENT CONTAINER
+    -- 4. CONTENT AREA
     local Content = Instance.new("Frame", MainFrame)
-    Content.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    Content.BorderSizePixel = 0
-    Content.Position = UDim2.new(0, 0, 0, 65)
-    Content.Size = UDim2.new(1, 0, 1, -65)
+    Content.BackgroundColor3 = Color3.fromRGB(18, 18, 18) -- Slightly lighter
+    Content.Position = UDim2.new(0, 10, 0, 85)
+    Content.Size = UDim2.new(1, -20, 1, -95)
+    
+    local ContentCorner = Instance.new("UICorner", Content)
+    ContentCorner.CornerRadius = UDim.new(0, 4)
 
     local FirstTab = true
     local WindowFunctions = {}
@@ -79,19 +85,15 @@ function Library:CreateWindow(Config)
         local TabBtn = Instance.new("TextButton", TabBar)
         TabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
         TabBtn.Size = UDim2.new(0, 120, 1, 0)
-        TabBtn.Font = Enum.Font.GothamBold
+        TabBtn.Font = Enum.Font.GothamSemibold
         TabBtn.Text = TabName
-        TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
-        TabBtn.TextSize = 12
+        TabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+        TabBtn.TextSize = 13
         
-        local Indicator = Instance.new("Frame", TabBtn)
-        Indicator.BackgroundColor3 = Accent
-        Indicator.BorderSizePixel = 0
-        Indicator.Position = UDim2.new(0, 0, 1, -2)
-        Indicator.Size = UDim2.new(1, 0, 0, 2)
-        Indicator.Visible = false
-
-        -- PAGE (Holds the Sidebar + Elements)
+        local BtnCorner = Instance.new("UICorner", TabBtn)
+        BtnCorner.CornerRadius = UDim.new(0, 4)
+        
+        -- TAB PAGE
         local TabPage = Instance.new("Frame", Content)
         TabPage.BackgroundTransparency = 1
         TabPage.Size = UDim2.new(1, 0, 1, 0)
@@ -100,36 +102,46 @@ function Library:CreateWindow(Config)
         -- SIDEBAR (Mini Tabs)
         local Sidebar = Instance.new("Frame", TabPage)
         Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-        Sidebar.BorderSizePixel = 0
-        Sidebar.Size = UDim2.new(0, 150, 1, 0)
+        Sidebar.Size = UDim2.new(0, 160, 1, 0)
         
+        local SidebarCorner = Instance.new("UICorner", Sidebar)
+        SidebarCorner.CornerRadius = UDim.new(0, 4)
+        
+        local SidebarPadding = Instance.new("UIPadding", Sidebar)
+        SidebarPadding.PaddingTop = UDim.new(0, 10)
+        SidebarPadding.PaddingLeft = UDim.new(0, 5)
+
         local SidebarList = Instance.new("UIListLayout", Sidebar)
         SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+        SidebarList.Padding = UDim.new(0, 5)
 
         -- ELEMENT AREA
         local ElementArea = Instance.new("Frame", TabPage)
         ElementArea.BackgroundTransparency = 1
-        ElementArea.Position = UDim2.new(0, 160, 0, 10)
-        ElementArea.Size = UDim2.new(1, -170, 1, -20)
+        ElementArea.Position = UDim2.new(0, 170, 0, 10)
+        ElementArea.Size = UDim2.new(1, -180, 1, -20)
 
         if FirstTab then
             TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Indicator.Visible = true
+            TabBtn.BackgroundColor3 = Accent
+            TabBtn.BackgroundTransparency = 0.8
             TabPage.Visible = true
             FirstTab = false
         end
 
         TabBtn.MouseButton1Click:Connect(function()
-            for _, v in pairs(Content:GetChildren()) do v.Visible = false end
+            for _, v in pairs(Content:GetChildren()) do if v:IsA("Frame") then v.Visible = false end end
             for _, v in pairs(TabBar:GetChildren()) do 
                 if v:IsA("TextButton") then 
-                    v.TextColor3 = Color3.fromRGB(100, 100, 100)
-                    v.Frame.Visible = false 
+                    v.TextColor3 = Color3.fromRGB(150, 150, 150)
+                    v.BackgroundTransparency = 0 
+                    v.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
                 end 
             end
             TabPage.Visible = true
             TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Indicator.Visible = true
+            TabBtn.BackgroundColor3 = Accent
+            TabBtn.BackgroundTransparency = 0.8
         end)
 
         local TabFunctions = {}
@@ -139,20 +151,17 @@ function Library:CreateWindow(Config)
         function TabFunctions:CreateSubTab(SubName)
             local SubBtn = Instance.new("TextButton", Sidebar)
             SubBtn.BackgroundTransparency = 1
-            SubBtn.Size = UDim2.new(1, 0, 0, 35)
+            SubBtn.Size = UDim2.new(1, -10, 0, 35)
             SubBtn.Font = Enum.Font.Gotham
-            SubBtn.Text = "   " .. SubName
+            SubBtn.Text = "  " .. SubName
             SubBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
             SubBtn.TextSize = 12
             SubBtn.TextXAlignment = Enum.TextXAlignment.Left
             
-            local ActiveBar = Instance.new("Frame", SubBtn)
-            ActiveBar.BackgroundColor3 = Accent
-            ActiveBar.BorderSizePixel = 0
-            ActiveBar.Size = UDim2.new(0, 3, 1, 0)
-            ActiveBar.Visible = false
+            local SubCorner = Instance.new("UICorner", SubBtn)
+            SubCorner.CornerRadius = UDim.new(0, 4)
 
-            -- Container for Items
+            -- Container
             local Container = Instance.new("ScrollingFrame", ElementArea)
             Container.BackgroundTransparency = 1
             Container.Size = UDim2.new(1, 0, 1, 0)
@@ -164,32 +173,26 @@ function Library:CreateWindow(Config)
             List.Padding = UDim.new(0, 5)
 
             if FirstSub then
-                SubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                SubBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                SubBtn.BackgroundTransparency = 0
-                ActiveBar.Visible = true
+                SubBtn.TextColor3 = Accent
+                SubBtn.BackgroundTransparency = 0.9
+                SubBtn.BackgroundColor3 = Accent
                 Container.Visible = true
                 FirstSub = false
             end
 
             SubBtn.MouseButton1Click:Connect(function()
-                -- Hide other containers
                 for _, v in pairs(ElementArea:GetChildren()) do v.Visible = false end
-                -- Reset sidebar buttons
                 for _, v in pairs(Sidebar:GetChildren()) do 
                     if v:IsA("TextButton") then 
                         v.TextColor3 = Color3.fromRGB(150, 150, 150)
                         v.BackgroundTransparency = 1
-                        v.Frame.Visible = false
                     end 
                 end
                 
-                -- Activate this
                 Container.Visible = true
-                SubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                SubBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                SubBtn.BackgroundTransparency = 0
-                ActiveBar.Visible = true
+                SubBtn.TextColor3 = Accent
+                SubBtn.BackgroundColor3 = Accent
+                SubBtn.BackgroundTransparency = 0.9
             end)
 
             local PageFunctions = {}
@@ -209,21 +212,30 @@ function Library:CreateWindow(Config)
                 Btn.TextSize = 12
                 Btn.TextXAlignment = Enum.TextXAlignment.Left
                 
-                local Box = Instance.new("Frame", Frame)
-                Box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                Box.Position = UDim2.new(1, -25, 0.5, -6)
-                Box.Size = UDim2.new(0, 12, 0, 12)
+                -- Custom Checkbox
+                local BoxOuter = Instance.new("Frame", Frame)
+                BoxOuter.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                BoxOuter.Position = UDim2.new(1, -25, 0.5, -7)
+                BoxOuter.Size = UDim2.new(0, 14, 0, 14)
+                Instance.new("UICorner", BoxOuter).CornerRadius = UDim.new(0, 3)
+                Instance.new("UIStroke", BoxOuter).Color = Color3.fromRGB(60, 60, 60)
                 
+                local BoxInner = Instance.new("Frame", BoxOuter)
+                BoxInner.BackgroundColor3 = Accent
+                BoxInner.Size = UDim2.new(1, 0, 1, 0)
+                BoxInner.BackgroundTransparency = 1
+                Instance.new("UICorner", BoxInner).CornerRadius = UDim.new(0, 3)
+
                 local Enabled = Config.CurrentValue or false
-                if Enabled then Box.BackgroundColor3 = Accent end
+                if Enabled then BoxInner.BackgroundTransparency = 0 end
 
                 Btn.MouseButton1Click:Connect(function()
                     Enabled = not Enabled
-                    TweenService:Create(Box, TweenInfo.new(0.1), {BackgroundColor3 = Enabled and Accent or Color3.fromRGB(40, 40, 40)}):Play()
+                    TweenService:Create(BoxInner, TweenInfo.new(0.15), {BackgroundTransparency = Enabled and 0 or 1}):Play()
                     if Config.Callback then Config.Callback(Enabled) end
                 end)
             end
-
+            
             -- SLIDER
             function PageFunctions:CreateSlider(Config)
                 local Frame = Instance.new("Frame", Container)
@@ -236,8 +248,18 @@ function Library:CreateWindow(Config)
                 local Val = Instance.new("TextLabel", Frame)
                 Val.Text=tostring(Config.CurrentValue); Val.TextColor3=Accent; Val.BackgroundTransparency=1; Val.Position=UDim2.new(1,-40,0,0); Val.Size=UDim2.new(0,30,0,20); Val.Font=Enum.Font.Code; Val.TextSize=12
                 
-                local BG = Instance.new("TextButton", Frame); BG.BackgroundColor3=Color3.fromRGB(40,40,40); BG.Position=UDim2.new(0,0,0,25); BG.Size=UDim2.new(1,-10,0,4); BG.Text=""
-                local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0); Fill.BorderSizePixel=0
+                local BG = Instance.new("TextButton", Frame)
+                BG.BackgroundColor3=Color3.fromRGB(30,30,30)
+                BG.Position=UDim2.new(0,0,0,25)
+                BG.Size=UDim2.new(1,-10,0,6)
+                BG.Text=""
+                Instance.new("UICorner", BG).CornerRadius = UDim.new(0, 3)
+                
+                local Fill = Instance.new("Frame", BG)
+                Fill.BackgroundColor3=Accent
+                Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0)
+                Fill.BorderSizePixel=0
+                Instance.new("UICorner", Fill).CornerRadius = UDim.new(0, 3)
                 
                 local Drag=false
                 BG.MouseButton1Down:Connect(function() Drag=true end)
@@ -256,8 +278,20 @@ function Library:CreateWindow(Config)
                 local Frame = Instance.new("Frame", Container)
                 Frame.BackgroundTransparency = 1
                 Frame.Size = UDim2.new(1, 0, 0, 35)
-                local Lbl = Instance.new("TextLabel", Frame); Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,1,0); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
-                local Btn = Instance.new("TextButton", Frame); Btn.BackgroundColor3=Color3.fromRGB(40,40,40); Btn.Position=UDim2.new(1,-80,0.5,-9); Btn.Size=UDim2.new(0,70,0,18); Btn.Text=Config.Default and Config.Default.Name or "None"; Btn.TextColor3=Color3.fromRGB(150,150,150); Btn.Font=Enum.Font.Code; Btn.TextSize=11
+                
+                local Lbl = Instance.new("TextLabel", Frame)
+                Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,1,0); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
+                
+                local Btn = Instance.new("TextButton", Frame)
+                Btn.BackgroundColor3=Color3.fromRGB(30,30,30)
+                Btn.Position=UDim2.new(1,-80,0.5,-10)
+                Btn.Size=UDim2.new(0,75,0,20)
+                Btn.Text=Config.Default and Config.Default.Name or "None"
+                Btn.TextColor3=Color3.fromRGB(150,150,150)
+                Btn.Font=Enum.Font.Code
+                Btn.TextSize=11
+                Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
+                
                 local Binding, Key = false, Config.Default
                 Btn.MouseButton1Click:Connect(function() Binding=true; Btn.Text="..."; Btn.TextColor3=Accent; local i=UserInputService.InputBegan:Wait(); if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; Btn.Text=Key.Name; Btn.TextColor3=Color3.fromRGB(150,150,150); Binding=false end end)
                 
@@ -274,7 +308,7 @@ function Library:CreateWindow(Config)
     
     function Library:Watermark(text) end
 
-    return WindowFunctions, Library
+    return WindowFunctions
 end
 
 return Library
