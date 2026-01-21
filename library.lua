@@ -1,6 +1,6 @@
 --[[
-    Excell Internal Library | v2.4 (Tall & Sub-Tabs)
-    - Window Size: 600px Height (Tall Juju Style)
+    Excell Internal Library | v2.5 (Tall & Mini-Tabs Fixed)
+    - Window: 600px Height (Vertical Layout)
     - Navigation: Sidebar Sub-Tabs
 ]]
 
@@ -16,7 +16,7 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(138, 43, 226)
     
-    -- DESTROY OLD UI (Anti-Duplicate for Library Testing)
+    -- 1. CLEANUP (Removes old menu instantly)
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v2") then
         game:GetService("CoreGui").ExcellInternal_v2:Destroy()
     end
@@ -25,61 +25,60 @@ function Library:CreateWindow(Config)
     ScreenGui.Name = "ExcellInternal_v2"
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-    if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-    -- MAIN FRAME (Tall)
+    
+    -- 2. MAIN FRAME (Forced Tall)
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "MainFrame"
     MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    MainFrame.BorderSizePixel = 1
     MainFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300) -- Centered
-    MainFrame.Size = UDim2.new(0, 600, 0, 600) -- 600px TALL
+    MainFrame.BorderSizePixel = 1
+    MainFrame.Position = UDim2.new(0.5, -325, 0.5, -300) -- Centered
+    MainFrame.Size = UDim2.new(0, 650, 0, 600) -- [[ TALLER SIZE HERE ]]
     MainFrame.Active = true
     MainFrame.Draggable = true
 
-    -- DECORATION
+    -- Decoration
     local TopLine = Instance.new("Frame", MainFrame)
     TopLine.BackgroundColor3 = Accent
     TopLine.BorderSizePixel = 0
     TopLine.Size = UDim2.new(1, 0, 0, 2)
-    
+
     local TitleLabel = Instance.new("TextLabel", MainFrame)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Position = UDim2.new(0, 10, 0, 5)
-    TitleLabel.Size = UDim2.new(0, 150, 0, 20)
+    TitleLabel.Size = UDim2.new(0, 200, 0, 20)
     TitleLabel.Font = Enum.Font.Code
     TitleLabel.Text = Title
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     TitleLabel.TextSize = 13
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- TOP TAB BAR
+    -- 3. TOP TAB BAR
     local TabBar = Instance.new("Frame", MainFrame)
     TabBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     TabBar.BorderSizePixel = 0
     TabBar.Position = UDim2.new(0, 0, 0, 30)
-    TabBar.Size = UDim2.new(1, 0, 0, 30)
+    TabBar.Size = UDim2.new(1, 0, 0, 35)
     
     local TabLayout = Instance.new("UIListLayout", TabBar)
     TabLayout.FillDirection = Enum.FillDirection.Horizontal
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    -- CONTENT AREA
+    -- 4. CONTENT CONTAINER
     local Content = Instance.new("Frame", MainFrame)
     Content.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
     Content.BorderSizePixel = 0
-    Content.Position = UDim2.new(0, 0, 0, 60)
-    Content.Size = UDim2.new(1, 0, 1, -60)
+    Content.Position = UDim2.new(0, 0, 0, 65)
+    Content.Size = UDim2.new(1, 0, 1, -65)
 
     local FirstTab = true
     local WindowFunctions = {}
 
+    -- CREATE TAB
     function WindowFunctions:CreateTab(TabName)
         local TabBtn = Instance.new("TextButton", TabBar)
         TabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        TabBtn.BorderSizePixel = 0
-        TabBtn.Size = UDim2.new(0, 100, 1, 0)
+        TabBtn.Size = UDim2.new(0, 120, 1, 0)
         TabBtn.Font = Enum.Font.GothamBold
         TabBtn.Text = TabName
         TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
@@ -92,26 +91,26 @@ function Library:CreateWindow(Config)
         Indicator.Size = UDim2.new(1, 0, 0, 2)
         Indicator.Visible = false
 
-        -- TAB PAGE
+        -- PAGE (Holds the Sidebar + Elements)
         local TabPage = Instance.new("Frame", Content)
         TabPage.BackgroundTransparency = 1
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.Visible = false
-        
-        -- SUB-TAB SIDEBAR
+
+        -- SIDEBAR (Mini Tabs)
         local Sidebar = Instance.new("Frame", TabPage)
         Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
         Sidebar.BorderSizePixel = 0
-        Sidebar.Size = UDim2.new(0, 140, 1, 0)
+        Sidebar.Size = UDim2.new(0, 150, 1, 0)
         
         local SidebarList = Instance.new("UIListLayout", Sidebar)
         SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
-        
-        -- SUB-TAB CONTENT
-        local SubContent = Instance.new("Frame", TabPage)
-        SubContent.BackgroundTransparency = 1
-        SubContent.Position = UDim2.new(0, 150, 0, 10)
-        SubContent.Size = UDim2.new(1, -160, 1, -20)
+
+        -- ELEMENT AREA
+        local ElementArea = Instance.new("Frame", TabPage)
+        ElementArea.BackgroundTransparency = 1
+        ElementArea.Position = UDim2.new(0, 160, 0, 10)
+        ElementArea.Size = UDim2.new(1, -170, 1, -20)
 
         if FirstTab then
             TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -136,6 +135,7 @@ function Library:CreateWindow(Config)
         local TabFunctions = {}
         local FirstSub = true
 
+        -- CREATE SUB-TAB
         function TabFunctions:CreateSubTab(SubName)
             local SubBtn = Instance.new("TextButton", Sidebar)
             SubBtn.BackgroundTransparency = 1
@@ -152,7 +152,8 @@ function Library:CreateWindow(Config)
             ActiveBar.Size = UDim2.new(0, 3, 1, 0)
             ActiveBar.Visible = false
 
-            local Container = Instance.new("ScrollingFrame", SubContent)
+            -- Container for Items
+            local Container = Instance.new("ScrollingFrame", ElementArea)
             Container.BackgroundTransparency = 1
             Container.Size = UDim2.new(1, 0, 1, 0)
             Container.Visible = false
@@ -172,9 +173,9 @@ function Library:CreateWindow(Config)
             end
 
             SubBtn.MouseButton1Click:Connect(function()
-                -- Hide all sub-contents
-                for _, v in pairs(SubContent:GetChildren()) do v.Visible = false end
-                -- Reset all sidebar buttons
+                -- Hide other containers
+                for _, v in pairs(ElementArea:GetChildren()) do v.Visible = false end
+                -- Reset sidebar buttons
                 for _, v in pairs(Sidebar:GetChildren()) do 
                     if v:IsA("TextButton") then 
                         v.TextColor3 = Color3.fromRGB(150, 150, 150)
@@ -183,7 +184,7 @@ function Library:CreateWindow(Config)
                     end 
                 end
                 
-                -- Activate
+                -- Activate this
                 Container.Visible = true
                 SubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 SubBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -198,36 +199,46 @@ function Library:CreateWindow(Config)
                 local Frame = Instance.new("Frame", Container)
                 Frame.BackgroundTransparency = 1
                 Frame.Size = UDim2.new(1, 0, 0, 35)
-                local Btn = Instance.new("TextButton", Frame); Btn.BackgroundTransparency=1; Btn.Size=UDim2.new(1,0,1,0); Btn.Font=Enum.Font.Gotham; Btn.Text=Config.Name; Btn.TextColor3=Color3.fromRGB(200,200,200); Btn.TextSize=12; Btn.TextXAlignment=Enum.TextXAlignment.Left
-                local Box = Instance.new("Frame", Frame); Box.BackgroundColor3=Color3.fromRGB(40,40,40); Box.Position=UDim2.new(1,-25,0.5,-6); Box.Size=UDim2.new(0,12,0,12)
+                
+                local Btn = Instance.new("TextButton", Frame)
+                Btn.BackgroundTransparency = 1
+                Btn.Size = UDim2.new(1, 0, 1, 0)
+                Btn.Font = Enum.Font.Gotham
+                Btn.Text = Config.Name
+                Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                Btn.TextSize = 12
+                Btn.TextXAlignment = Enum.TextXAlignment.Left
+                
+                local Box = Instance.new("Frame", Frame)
+                Box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                Box.Position = UDim2.new(1, -25, 0.5, -6)
+                Box.Size = UDim2.new(0, 12, 0, 12)
+                
                 local Enabled = Config.CurrentValue or false
                 if Enabled then Box.BackgroundColor3 = Accent end
-                Btn.MouseButton1Click:Connect(function() Enabled=not Enabled; TweenService:Create(Box,TweenInfo.new(0.1),{BackgroundColor3=Enabled and Accent or Color3.fromRGB(40,40,40)}):Play(); if Config.Callback then Config.Callback(Enabled) end end)
-            end
 
-            -- KEYBIND
-            function PageFunctions:CreateKeybind(Config)
-                local Frame = Instance.new("Frame", Container)
-                Frame.BackgroundTransparency = 1
-                Frame.Size = UDim2.new(1, 0, 0, 35)
-                local Lbl = Instance.new("TextLabel", Frame); Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,1,0); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
-                local Btn = Instance.new("TextButton", Frame); Btn.BackgroundColor3=Color3.fromRGB(40,40,40); Btn.Position=UDim2.new(1,-80,0.5,-9); Btn.Size=UDim2.new(0,70,0,18); Btn.Text=Config.Default and Config.Default.Name or "None"; Btn.TextColor3=Color3.fromRGB(150,150,150); Btn.Font=Enum.Font.Code; Btn.TextSize=11
-                local Binding, Key = false, Config.Default
-                Btn.MouseButton1Click:Connect(function() Binding=true; Btn.Text="..."; Btn.TextColor3=Accent; local i=UserInputService.InputBegan:Wait(); if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; Btn.Text=Key.Name; Btn.TextColor3=Color3.fromRGB(150,150,150); Binding=false end end)
-                
-                -- Support Hold Mode
-                RunService.RenderStepped:Connect(function()
-                    if Config.Callback then Config.Callback(UserInputService:IsKeyDown(Key or Enum.KeyCode.Unknown)) end
+                Btn.MouseButton1Click:Connect(function()
+                    Enabled = not Enabled
+                    TweenService:Create(Box, TweenInfo.new(0.1), {BackgroundColor3 = Enabled and Accent or Color3.fromRGB(40, 40, 40)}):Play()
+                    if Config.Callback then Config.Callback(Enabled) end
                 end)
             end
 
             -- SLIDER
             function PageFunctions:CreateSlider(Config)
-                local Frame = Instance.new("Frame", Container); Frame.BackgroundTransparency=1; Frame.Size=UDim2.new(1,0,0,50)
-                local Lbl = Instance.new("TextLabel", Frame); Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,0,20); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
-                local Val = Instance.new("TextLabel", Frame); Val.Text=tostring(Config.CurrentValue); Val.TextColor3=Accent; Val.BackgroundTransparency=1; Val.Position=UDim2.new(1,-40,0,0); Val.Size=UDim2.new(0,30,0,20); Val.Font=Enum.Font.Code; Val.TextSize=12
+                local Frame = Instance.new("Frame", Container)
+                Frame.BackgroundTransparency = 1
+                Frame.Size = UDim2.new(1, 0, 0, 50)
+                
+                local Lbl = Instance.new("TextLabel", Frame)
+                Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,0,20); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
+                
+                local Val = Instance.new("TextLabel", Frame)
+                Val.Text=tostring(Config.CurrentValue); Val.TextColor3=Accent; Val.BackgroundTransparency=1; Val.Position=UDim2.new(1,-40,0,0); Val.Size=UDim2.new(0,30,0,20); Val.Font=Enum.Font.Code; Val.TextSize=12
+                
                 local BG = Instance.new("TextButton", Frame); BG.BackgroundColor3=Color3.fromRGB(40,40,40); BG.Position=UDim2.new(0,0,0,25); BG.Size=UDim2.new(1,-10,0,4); BG.Text=""
                 local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0); Fill.BorderSizePixel=0
+                
                 local Drag=false
                 BG.MouseButton1Down:Connect(function() Drag=true end)
                 UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Drag=false end end)
@@ -239,16 +250,31 @@ function Library:CreateWindow(Config)
                     end
                 end)
             end
+            
+            -- KEYBIND
+            function PageFunctions:CreateKeybind(Config)
+                local Frame = Instance.new("Frame", Container)
+                Frame.BackgroundTransparency = 1
+                Frame.Size = UDim2.new(1, 0, 0, 35)
+                local Lbl = Instance.new("TextLabel", Frame); Lbl.Text=Config.Name; Lbl.TextColor3=Color3.fromRGB(200,200,200); Lbl.BackgroundTransparency=1; Lbl.Size=UDim2.new(1,0,1,0); Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12; Lbl.TextXAlignment=Enum.TextXAlignment.Left
+                local Btn = Instance.new("TextButton", Frame); Btn.BackgroundColor3=Color3.fromRGB(40,40,40); Btn.Position=UDim2.new(1,-80,0.5,-9); Btn.Size=UDim2.new(0,70,0,18); Btn.Text=Config.Default and Config.Default.Name or "None"; Btn.TextColor3=Color3.fromRGB(150,150,150); Btn.Font=Enum.Font.Code; Btn.TextSize=11
+                local Binding, Key = false, Config.Default
+                Btn.MouseButton1Click:Connect(function() Binding=true; Btn.Text="..."; Btn.TextColor3=Accent; local i=UserInputService.InputBegan:Wait(); if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; Btn.Text=Key.Name; Btn.TextColor3=Color3.fromRGB(150,150,150); Binding=false end end)
+                
+                RunService.RenderStepped:Connect(function()
+                    if Config.Callback then Config.Callback(UserInputService:IsKeyDown(Key or Enum.KeyCode.Unknown)) end
+                end)
+            end
 
             return PageFunctions
         end
 
         return TabFunctions
     end
-
+    
     function Library:Watermark(text) end
 
-    return WindowFunctions
+    return WindowFunctions, Library
 end
 
 return Library
