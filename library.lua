@@ -1,8 +1,7 @@
 --[[
-    Excell Internal Library | v3.9 (Manual Close + X Button)
-    - Fix: Context Menu stays open until you close it.
-    - Feature: Added [X] button to right-click menu.
-    - Style: Deep Black + Neon Purple.
+    Excell Internal Library | v4.0 (Interaction Fix)
+    - Fix: Removed "Click Away to Close" conflict.
+    - Usage: Close menu using [X] or selecting an option.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -187,7 +186,7 @@ function Library:CreateWindow(Config)
                 end end)
             end
 
-            -- KEYBIND (WITH X BUTTON)
+            -- KEYBIND (WITH X BUTTON + SAFE CLICK)
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -197,6 +196,7 @@ function Library:CreateWindow(Config)
                 local Mode = "Toggle"
                 local Key = Config.Default
                 local Binding = false
+                local Toggled = false
 
                 -- Update Text
                 local function UpdateText()
@@ -229,7 +229,7 @@ function Library:CreateWindow(Config)
                     Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
                     Menu.BorderColor3 = Accent
                     Menu.BorderSizePixel = 1
-                    Menu.Size = UDim2.new(0, 100, 0, 95) -- Slightly taller for X button
+                    Menu.Size = UDim2.new(0, 100, 0, 95) 
                     Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y)
                     Menu.ZIndex = 100
                     Library.ActiveMenu = Menu
@@ -290,6 +290,10 @@ function Library:CreateWindow(Config)
                         
                         Opt.MouseButton1Click:Connect(function()
                             if Config.Callback then Config.Callback(false) end -- Reset state
+                            
+                            -- IMPORTANT: Reset internal toggle state too
+                            Toggled = false 
+                            
                             Mode = Name
                             UpdateText()
                             Menu:Destroy()
@@ -300,7 +304,6 @@ function Library:CreateWindow(Config)
                 end)
                 
                 -- Logic
-                local Toggled = false
                 UserInputService.InputBegan:Connect(function(i, p)
                     if p then return end
                     if i.KeyCode == Key and Mode == "Toggle" then
