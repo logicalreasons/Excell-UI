@@ -1,13 +1,14 @@
 --[[
-    maddy.win | Da Hood (Fix: Cache Buster)
-    - Fix: Forces Roblox to download the NEW library.
-    - Result: Dropdowns, sliders, and toggles will appear.
+    maddy.win | Da Hood (Full Update)
+    - Features: Dropdowns, Closest Part Logic, Sliders, Toggles.
+    - Fix: Auto-updates Library (Cache Buster).
 ]]
 
--- FORCE FRESH DOWNLOAD (Cache Buster)
+-- 1. LOAD LIBRARY (With Cache Buster to prevent crashing)
 local LibraryUrl = "https://raw.githubusercontent.com/logicalreasons/Excell-UI/refs/heads/main/library.lua?v="..tostring(math.random(1, 10000))
 local Library = loadstring(game:HttpGet(LibraryUrl))()
 
+-- 2. SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -15,6 +16,7 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
+-- 3. GLOBALS
 local Global = {
     Aimbot = false,
     AimPart = "HumanoidRootPart", 
@@ -35,7 +37,7 @@ local Global = {
 local CurrentTarget = nil
 local FOVCircle = Drawing.new("Circle")
 
--- Create Window
+-- 4. WINDOW CREATION
 local Window = Library:CreateWindow({
     Name = "maddy.win", 
     Accent = Color3.fromRGB(170, 100, 255)
@@ -60,15 +62,12 @@ AimTab:CreateKeybind({
         if not v then CurrentTarget=nil end 
     end 
 })
-
--- The script was crashing here before because it loaded the old library!
 AimTab:CreateDropdown({
     Name = "Target Part",
     Options = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"},
     CurrentOption = "HumanoidRootPart",
     Callback = function(v) Global.AimPart = v end
 })
-
 AimTab:CreateSlider({ Name = "Prediction", Range = {100, 200}, CurrentValue = 135, Callback = function(v) Global.Prediction = v/1000 end })
 AimTab:CreateSlider({ Name = "Smoothness", Range = {1, 20}, CurrentValue = 5, Callback = function(v) Global.Smoothness = 0.5/v end })
 AddFOVControls(AimTab)
@@ -76,7 +75,6 @@ AddFOVControls(AimTab)
 -- [[ SILENT AIM TAB ]]
 local SilentTab = Combat:CreateSubTab("Silent Aim")
 SilentTab:CreateToggle({ Name = "Enabled", CurrentValue = false, Callback = function(v) Global.SilentAim = v end })
-
 SilentTab:CreateDropdown({
     Name = "Target Part",
     Options = {"Closest Part", "Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"},
@@ -99,7 +97,7 @@ EspTab:CreateToggle({ Name = "Box ESP", CurrentValue = false, Callback = functio
 local MenuTab = Misc:CreateSubTab("Menu")
 MenuTab:CreateSlider({ Name = "Menu Scale", Range = {50, 150}, CurrentValue = 100, Callback = function(v) Window:SetScale(v/100) end })
 
--- [[ LOGIC ENGINE ]]
+-- 5. LOGIC ENGINE
 local function GetClosest()
     local MaxDist = Global.DrawFOV and Global.FOVRadius or 9999
     local Target = nil
@@ -121,19 +119,20 @@ local function GetClosest()
     return Target
 end
 
-local function GetClosestPart(Char)
+local function GetClosestBodyPart(Char)
     local Dist = 9999
     local Closest = nil
     local Parts = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso", "LeftHand", "RightHand", "LeftFoot", "RightFoot"}
-    
     for _, Name in pairs(Parts) do
         local Part = Char:FindFirstChild(Name)
         if Part then
-            local Screen = Camera:WorldToViewportPoint(Part.Position)
-            local Mag = (Vector2.new(Screen.X, Screen.Y) - UserInputService:GetMouseLocation()).Magnitude
-            if Mag < Dist then
-                Dist = Mag
-                Closest = Part
+            local Screen, OnScreen = Camera:WorldToViewportPoint(Part.Position)
+            if OnScreen then
+                local Mag = (Vector2.new(Screen.X, Screen.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if Mag < Dist then
+                    Dist = Mag
+                    Closest = Part
+                end
             end
         end
     end
@@ -141,12 +140,14 @@ local function GetClosestPart(Char)
 end
 
 RunService.RenderStepped:Connect(function()
+    -- Update FOV Circle
     FOVCircle.Visible = Global.DrawFOV
     FOVCircle.Radius = Global.FOVRadius
     FOVCircle.Position = UserInputService:GetMouseLocation()
     FOVCircle.Color = Color3.fromRGB(170, 100, 255)
     FOVCircle.Thickness = 1
 
+    -- Trigger Bot
     if Global.TriggerBot then
         local t = Mouse.Target
         if t and t.Parent and t.Parent:FindFirstChild("Humanoid") and t.Parent.Name ~= LocalPlayer.Name then
@@ -155,19 +156,39 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if Global.Aimbot then
+    -- Aiming Logic
+    if Global.Aimbot or Global.SilentAim then
         if not CurrentTarget then CurrentTarget = GetClosest() end
+        
         if CurrentTarget and CurrentTarget.Character then
-            -- Aimbot Part Logic
-            local Part = CurrentTarget.Character:FindFirstChild(Global.AimPart)
+            local Part = nil
+            
+            -- Logic: Determine which part to hit
+            if Global.SilentAim then
+                if Global.SilentPart == "Closest Part" then
+                    Part = GetClosestBodyPart(CurrentTarget.Character)
+                else
+                    Part = CurrentTarget.Character:FindFirstChild(Global.SilentPart)
+                end
+            elseif Global.Aimbot then
+                Part = CurrentTarget.Character:FindFirstChild(Global.AimPart)
+            end
+
+            -- Move Camera
             if Part then
                 local Pred = Part.Position + (Part.Velocity * Global.Prediction)
                 local Goal = CFrame.new(Camera.CFrame.Position, Pred)
                 Camera.CFrame = Camera.CFrame:Lerp(Goal, Global.Smoothness)
-                FOVCircle.Color = Color3.fromRGB(255, 0, 0)
-            else CurrentTarget = nil end
-        else CurrentTarget = nil; FOVCircle.Color = Color3.fromRGB(170, 100, 255) end
-    else CurrentTarget = nil end
+                FOVCircle.Color = Color3.fromRGB(255, 0, 0) -- Turn Red when Locked
+            else 
+                CurrentTarget = nil 
+            end
+        else 
+            CurrentTarget = nil; FOVCircle.Color = Color3.fromRGB(170, 100, 255) 
+        end
+    else 
+        CurrentTarget = nil 
+    end
 end)
 
 local function AddEsp(P)
