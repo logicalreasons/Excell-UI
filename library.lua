@@ -1,11 +1,11 @@
 --[[
-    maddy.win | Da Hood
-    - Fix: Restored missing sliders (Prediction, Smoothness) and Toggles.
-    - Features: Dropdowns for Body Parts (Head, Torso, etc.).
-    - Library: GitHub Hosted (v4.4 Compatible)
+    maddy.win | Da Hood (Fix: Cache Buster)
+    - Fix: Forces Roblox to download the NEW library.
+    - Result: Dropdowns, sliders, and toggles will appear.
 ]]
 
-local LibraryUrl = "https://raw.githubusercontent.com/logicalreasons/Excell-UI/refs/heads/main/library.lua"
+-- FORCE FRESH DOWNLOAD (Cache Buster)
+local LibraryUrl = "https://raw.githubusercontent.com/logicalreasons/Excell-UI/refs/heads/main/library.lua?v="..tostring(math.random(1, 10000))
 local Library = loadstring(game:HttpGet(LibraryUrl))()
 
 local Players = game:GetService("Players")
@@ -17,10 +17,10 @@ local Mouse = LocalPlayer:GetMouse()
 
 local Global = {
     Aimbot = false,
-    AimPart = "HumanoidRootPart", -- Default aim part
+    AimPart = "HumanoidRootPart", 
     
     SilentAim = false,
-    SilentPart = "Closest Part", -- Default silent part
+    SilentPart = "Closest Part", 
     
     Prediction = 0.135,
     Smoothness = 0.1,
@@ -45,13 +45,12 @@ local Combat = Window:CreateTab("Combat")
 local Visuals = Window:CreateTab("Visuals")
 local Misc = Window:CreateTab("Misc")
 
--- FOV Helper Function
 local function AddFOVControls(Page)
     Page:CreateToggle({ Name = "Draw FOV", CurrentValue = Global.DrawFOV, Callback = function(v) Global.DrawFOV = v end })
     Page:CreateSlider({ Name = "FOV Size", Range = {50, 600}, CurrentValue = Global.FOVRadius, Callback = function(v) Global.FOVRadius = v end })
 end
 
--- AIMBOT TAB
+-- [[ AIMBOT TAB ]]
 local AimTab = Combat:CreateSubTab("Aimbot")
 AimTab:CreateKeybind({ 
     Name = "Lock Key", 
@@ -61,22 +60,23 @@ AimTab:CreateKeybind({
         if not v then CurrentTarget=nil end 
     end 
 })
--- Dropdown for Aimbot Part
+
+-- The script was crashing here before because it loaded the old library!
 AimTab:CreateDropdown({
     Name = "Target Part",
     Options = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"},
     CurrentOption = "HumanoidRootPart",
     Callback = function(v) Global.AimPart = v end
 })
--- Restored Sliders
+
 AimTab:CreateSlider({ Name = "Prediction", Range = {100, 200}, CurrentValue = 135, Callback = function(v) Global.Prediction = v/1000 end })
 AimTab:CreateSlider({ Name = "Smoothness", Range = {1, 20}, CurrentValue = 5, Callback = function(v) Global.Smoothness = 0.5/v end })
 AddFOVControls(AimTab)
 
--- SILENT AIM TAB
+-- [[ SILENT AIM TAB ]]
 local SilentTab = Combat:CreateSubTab("Silent Aim")
 SilentTab:CreateToggle({ Name = "Enabled", CurrentValue = false, Callback = function(v) Global.SilentAim = v end })
--- Dropdown for Silent Aim Part (Includes "Closest Part")
+
 SilentTab:CreateDropdown({
     Name = "Target Part",
     Options = {"Closest Part", "Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"},
@@ -85,21 +85,21 @@ SilentTab:CreateDropdown({
 })
 AddFOVControls(SilentTab)
 
--- TRIGGER BOT TAB
+-- [[ TRIGGER BOT TAB ]]
 local TriggerTab = Combat:CreateSubTab("Trigger Bot")
 TriggerTab:CreateToggle({ Name = "Enabled", CurrentValue = false, Callback = function(v) Global.TriggerBot = v end })
 TriggerTab:CreateSlider({ Name = "Delay (ms)", Range = {0, 200}, CurrentValue = 0, Callback = function(v) Global.TriggerDelay = v end })
 AddFOVControls(TriggerTab)
 
--- ESP TAB
+-- [[ ESP TAB ]]
 local EspTab = Visuals:CreateSubTab("ESP Settings")
 EspTab:CreateToggle({ Name = "Box ESP", CurrentValue = false, Callback = function(v) Global.BoxEsp = v end })
 
--- MISC TAB
+-- [[ MISC TAB ]]
 local MenuTab = Misc:CreateSubTab("Menu")
 MenuTab:CreateSlider({ Name = "Menu Scale", Range = {50, 150}, CurrentValue = 100, Callback = function(v) Window:SetScale(v/100) end })
 
--- LOGIC ENGINE
+-- [[ LOGIC ENGINE ]]
 local function GetClosest()
     local MaxDist = Global.DrawFOV and Global.FOVRadius or 9999
     local Target = nil
@@ -158,9 +158,8 @@ RunService.RenderStepped:Connect(function()
     if Global.Aimbot then
         if not CurrentTarget then CurrentTarget = GetClosest() end
         if CurrentTarget and CurrentTarget.Character then
-            -- Determine Part based on Dropdown
+            -- Aimbot Part Logic
             local Part = CurrentTarget.Character:FindFirstChild(Global.AimPart)
-            
             if Part then
                 local Pred = Part.Position + (Part.Velocity * Global.Prediction)
                 local Goal = CFrame.new(Camera.CFrame.Position, Pred)
