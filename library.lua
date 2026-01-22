@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.17 (GitHub Hosted)
-    - Fix: Aggressive Auto-Cleanup (Deletes old UIs instantly).
-    - Features: Overwrite, Labels, Buttons, Refreshable Dropdowns.
+    Excell Internal Library | v4.18 (Color Picker Added)
+    - Feature: Added CreateColorPicker (Rayfield Style).
+    - Fix: Aggressive Cleanup & Auto-Resize.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -17,7 +17,6 @@ function Library:CreateWindow(Config)
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
     -- [[ AGGRESSIVE CLEANUP ]]
-    -- Deletes any existing copies of the UI to prevent stacking
     for _, GUI in pairs(game:GetService("CoreGui"):GetChildren()) do
         if GUI.Name == "ExcellInternal_v3" then GUI:Destroy() end
     end
@@ -29,7 +28,6 @@ function Library:CreateWindow(Config)
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
-    -- Fallback Parent Logic
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -53,7 +51,6 @@ function Library:CreateWindow(Config)
     TopBar.BorderSizePixel = 0
     TopBar.Size = UDim2.new(1, 0, 0, 25)
 
-    -- Custom Drag Logic
     local function MakeDraggable(Frame, Handle)
         local Dragging, DragInput, DragStart, StartPos
         Handle.InputBegan:Connect(function(Input)
@@ -171,6 +168,57 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
+            -- COLOR PICKER (NEW)
+            function PageFuncs:CreateColorPicker(Config)
+                local Obj = {}
+                local Default = Config.Default or Color3.fromRGB(255, 255, 255)
+                local H, S, V = Color3.toHSV(Default)
+                
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26); F.ClipsDescendants=true
+                local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,-40,0,26); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
+                
+                local Preview = Instance.new("TextButton", F)
+                Preview.Text=""; Preview.BackgroundColor3=Default; Preview.BorderColor3=Color3.fromRGB(50,50,50); Preview.Position=UDim2.new(1,-35,0,3); Preview.Size=UDim2.new(0,30,0,20)
+                
+                local PickerFrame = Instance.new("Frame", F); PickerFrame.BackgroundTransparency=1; PickerFrame.Position=UDim2.new(0,0,0,30); PickerFrame.Size=UDim2.new(1,0,0,110)
+                
+                local Spectrum = Instance.new("ImageButton", PickerFrame); Spectrum.Image="rbxassetid://4155801252"; Spectrum.Size=UDim2.new(0,90,0,90); Spectrum.Position=UDim2.new(0,10,0,0); Spectrum.BorderColor3=Color3.fromRGB(50,50,50)
+                local Cursor = Instance.new("Frame", Spectrum); Cursor.Size=UDim2.new(0,4,0,4); Cursor.BorderColor3=Color3.new(0,0,0); Cursor.BackgroundColor3=Color3.new(1,1,1); Cursor.Position=UDim2.new(1-H,0,1-S,0)
+                
+                local Brightness = Instance.new("ImageButton", PickerFrame); Brightness.Image="rbxassetid://4155801252"; Brightness.Size=UDim2.new(0,20,0,90); Brightness.Position=UDim2.new(0,110,0,0); Brightness.BorderColor3=Color3.fromRGB(50,50,50)
+                local BBar = Instance.new("Frame", Brightness); BBar.Size=UDim2.new(1,0,0,2); BBar.BackgroundColor3=Color3.new(1,1,1); BBar.BorderColor3=Color3.new(0,0,0); BBar.Position=UDim2.new(0,0,1-V,0)
+
+                local function UpdateColor()
+                    local NewColor = Color3.fromHSV(H, S, V)
+                    Preview.BackgroundColor3 = NewColor
+                    if Config.Callback then Config.Callback(NewColor) end
+                end
+
+                local Dragging = false; local DraggingV = false
+                Spectrum.MouseButton1Down:Connect(function() Dragging=true end)
+                Brightness.MouseButton1Down:Connect(function() DraggingV=true end)
+                
+                UserInputService.InputChanged:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseMovement then
+                        if Dragging then
+                            local RelX = math.clamp((i.Position.X - Spectrum.AbsolutePosition.X) / Spectrum.AbsoluteSize.X, 0, 1)
+                            local RelY = math.clamp((i.Position.Y - Spectrum.AbsolutePosition.Y) / Spectrum.AbsoluteSize.Y, 0, 1)
+                            H = 1 - RelX; S = 1 - RelY; Cursor.Position = UDim2.new(RelX, -2, RelY, -2); UpdateColor()
+                        elseif DraggingV then
+                            local RelY = math.clamp((i.Position.Y - Brightness.AbsolutePosition.Y) / Brightness.AbsoluteSize.Y, 0, 1)
+                            V = 1 - RelY; BBar.Position = UDim2.new(0,0,RelY,0); UpdateColor()
+                        end
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Dragging=false; DraggingV=false end end)
+                
+                local Open = false
+                Preview.MouseButton1Click:Connect(function() Open = not Open; if Open then F.Size = UDim2.new(1,0,0,130) else F.Size = UDim2.new(1,0,0,26) end end)
+                
+                function Obj:Set(Val) local h,s,v = Color3.toHSV(Val); H=h; S=s; V=v; UpdateColor() end
+                return Obj
+            end
+
             -- BUTTON
             function PageFuncs:CreateButton(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
@@ -203,7 +251,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- DROPDOWN (Refresh + Bigger List)
+            -- DROPDOWN
             function PageFuncs:CreateDropdown(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
