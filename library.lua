@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.11 (Button Support)
-    - Feature: Added 'CreateButton' element.
-    - Fix: Preserved drag, scale, and config logic.
+    Excell Internal Library | v4.12 (Config Dropdown Support)
+    - Feature: Dropdowns now support :Refresh(List) to update options dynamically.
+    - Fix: Preserved Buttons, Drag, Scale.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -9,7 +9,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-print("[Excell] Library v4.11 Loaded")
+print("[Excell] Library v4.12 Loaded")
 
 local Library = {}
 Library.ActiveMenu = nil 
@@ -156,14 +156,13 @@ function Library:CreateWindow(Config)
                 local B = Instance.new("TextButton", F); B.BackgroundTransparency=1; B.Size=UDim2.new(1,0,1,0); B.Font=Enum.Font.Code; B.Text=Config.Name; B.TextColor3=Color3.fromRGB(200,200,200); B.TextSize=12; B.TextXAlignment=Enum.TextXAlignment.Left
                 local Box = Instance.new("Frame", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(1,-18,0.5,-6); Box.Size=UDim2.new(0,12,0,12)
                 local Fill = Instance.new("Frame", Box); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new(1,0,1,0); Fill.Visible=Config.CurrentValue or false
-                
                 local function Update(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
                 B.MouseButton1Click:Connect(function() Update(not Fill.Visible) end)
                 function Obj:Set(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
                 return Obj
             end
 
-            -- BUTTON (NEW)
+            -- BUTTON
             function PageFuncs:CreateButton(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
                 local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Size=UDim2.new(1,-10,0,22); B.Position=UDim2.new(0,0,0,2)
@@ -179,14 +178,10 @@ function Library:CreateWindow(Config)
                 local V = Instance.new("TextLabel", F); V.Text=tostring(Config.CurrentValue); V.TextColor3=Accent; V.BackgroundTransparency=1; V.Position=UDim2.new(1,-40,0,0); V.Size=UDim2.new(0,30,0,15); V.Font=Enum.Font.Code; V.TextSize=12
                 local BG = Instance.new("TextButton", F); BG.BackgroundColor3=Color3.fromRGB(25,25,25); BG.BorderColor3=Color3.fromRGB(50,50,50); BG.Position=UDim2.new(0,0,0,18); BG.Size=UDim2.new(1,-10,0,6); BG.Text=""
                 local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0)
-                
                 local function Update(Val)
                     local P = (Val - Config.Range[1]) / (Config.Range[2] - Config.Range[1])
-                    Fill.Size = UDim2.new(P, 0, 1, 0)
-                    V.Text = tostring(Val)
-                    if Config.Callback then Config.Callback(Val) end
+                    Fill.Size = UDim2.new(P, 0, 1, 0); V.Text = tostring(Val); if Config.Callback then Config.Callback(Val) end
                 end
-
                 local Drag=false
                 BG.MouseButton1Down:Connect(function() Drag=true end)
                 UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Drag=false end end)
@@ -199,22 +194,34 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- DROPDOWN
+            -- DROPDOWN (UPDATED FOR REFRESH)
             function PageFuncs:CreateDropdown(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,20); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local MainBtn = Instance.new("TextButton", F); MainBtn.BackgroundColor3=Color3.fromRGB(25,25,25); MainBtn.BorderColor3=Color3.fromRGB(50,50,50); MainBtn.Position=UDim2.new(0,0,0,25); MainBtn.Size=UDim2.new(1,-10,0,20); MainBtn.Text=Config.CurrentOption or Config.Options[1]; MainBtn.TextColor3=Accent; MainBtn.Font=Enum.Font.Code; MainBtn.TextSize=11
+                
                 local Open = false; local ListSize = #Config.Options * 20
                 local Scroll = Instance.new("ScrollingFrame", F); Scroll.BackgroundColor3=Color3.fromRGB(20,20,20); Scroll.BorderColor3=Color3.fromRGB(50,50,50); Scroll.Position=UDim2.new(0,0,0,48); Scroll.Size=UDim2.new(1,-10,0, ListSize); Scroll.ScrollBarThickness=2; Scroll.Visible=false
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
                 
                 MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end end)
+                
                 function Obj:Set(Val) MainBtn.Text = Val; if Config.Callback then Config.Callback(Val) end end
-                for _, Option in pairs(Config.Options) do
-                    local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
-                    OptBtn.MouseButton1Click:Connect(function() Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); Obj:Set(Option) end)
+                
+                -- REFRESH FUNCTION (For Config List)
+                function Obj:Refresh(NewOptions)
+                    for _, v in pairs(Scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+                    for _, Option in pairs(NewOptions) do
+                        local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
+                        OptBtn.MouseButton1Click:Connect(function() Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); Obj:Set(Option) end)
+                    end
+                    ListSize = #NewOptions * 20
+                    Scroll.Size = UDim2.new(1, -10, 0, ListSize)
+                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) end
                 end
+
+                Obj:Refresh(Config.Options) -- Initialize
                 return Obj
             end
 
