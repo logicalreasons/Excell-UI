@@ -1,7 +1,8 @@
 --[[
-    Excell Internal Library | v4.20 (Color Picker Visual Fix)
-    - Fix: Swapped the Spectrum Image ID to a real Rainbow map.
-    - Result: The color picker will now show actual colors, not just black/white.
+    Excell Internal Library | v4.21 (Rayfield Style Fix)
+    - Fix: Main Box now updates color correctly (Sat/Val).
+    - Fix: Right Bar is now the Rainbow Hue Slider (UIGradient).
+    - Layout: Big Box Left, Skinny Bar Right.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -168,63 +169,108 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- COLOR PICKER (FIXED IMAGE ID)
+            -- COLOR PICKER (RAYFIELD FIX)
             function PageFuncs:CreateColorPicker(Config)
                 local Obj = {}
                 local Default = Config.Default or Color3.fromRGB(255, 255, 255)
                 local H, S, V = Color3.toHSV(Default)
                 
+                -- Container
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26); F.ClipsDescendants=true
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,-40,0,26); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 
+                -- Small Preview Square
                 local Preview = Instance.new("TextButton", F)
                 Preview.Text=""; Preview.BackgroundColor3=Default; Preview.BorderColor3=Color3.fromRGB(50,50,50); Preview.Position=UDim2.new(1,-35,0,3); Preview.Size=UDim2.new(0,30,0,20)
                 
+                -- Expanded Frame
                 local PickerFrame = Instance.new("Frame", F); PickerFrame.BackgroundTransparency=1; PickerFrame.Position=UDim2.new(0,0,0,30); PickerFrame.Size=UDim2.new(1,0,0,110)
                 
-                -- FIXED: This is the Rainbow Map
-                local Spectrum = Instance.new("ImageButton", PickerFrame)
-                Spectrum.Image="rbxassetid://6971565518" 
-                Spectrum.Size=UDim2.new(0,90,0,90); Spectrum.Position=UDim2.new(0,10,0,0); Spectrum.BorderColor3=Color3.fromRGB(50,50,50)
+                -- [[ 1. MAIN BOX (SAT/VAL) - LEFT ]]
+                local SatValBox = Instance.new("ImageButton", PickerFrame)
+                SatValBox.Size = UDim2.new(0, 90, 0, 90)
+                SatValBox.Position = UDim2.new(0, 10, 0, 0)
+                SatValBox.BorderColor3 = Color3.fromRGB(50,50,50)
+                SatValBox.Image = "rbxassetid://4155801252" -- Shadow/Gradient Overlay
+                SatValBox.BackgroundColor3 = Color3.fromHSV(H, 1, 1) -- THIS IS THE FIX: The base color
                 
-                local Cursor = Instance.new("Frame", Spectrum); Cursor.Size=UDim2.new(0,4,0,4); Cursor.BorderColor3=Color3.new(0,0,0); Cursor.BackgroundColor3=Color3.new(1,1,1); Cursor.Position=UDim2.new(1-H,0,1-S,0)
+                local Cursor = Instance.new("Frame", SatValBox) -- The little square cursor
+                Cursor.Size = UDim2.new(0, 4, 0, 4)
+                Cursor.BorderColor3 = Color3.new(0,0,0)
+                Cursor.BackgroundColor3 = Color3.new(1,1,1)
+                Cursor.Position = UDim2.new(S, -2, 1-V, -2) -- Position based on Sat/Val
                 
-                -- FIXED: This is the Brightness Slider (Shadow)
-                local Brightness = Instance.new("ImageButton", PickerFrame)
-                Brightness.Image="rbxassetid://4155801252"
-                Brightness.BackgroundColor3 = Color3.new(0,0,0)
-                Brightness.ImageColor3 = Color3.new(1,1,1)
-                Brightness.Size=UDim2.new(0,20,0,90); Brightness.Position=UDim2.new(0,110,0,0); Brightness.BorderColor3=Color3.fromRGB(50,50,50)
-                local BBar = Instance.new("Frame", Brightness); BBar.Size=UDim2.new(1,0,0,2); BBar.BackgroundColor3=Color3.new(1,1,1); BBar.BorderColor3=Color3.new(0,0,0); BBar.Position=UDim2.new(0,0,1-V,0)
+                -- [[ 2. RAINBOW BAR (HUE) - RIGHT ]]
+                local HueBar = Instance.new("ImageButton", PickerFrame)
+                HueBar.Size = UDim2.new(0, 20, 0, 90)
+                HueBar.Position = UDim2.new(0, 110, 0, 0)
+                HueBar.BorderColor3 = Color3.fromRGB(50,50,50)
+                HueBar.BackgroundColor3 = Color3.new(1,1,1)
+                HueBar.Image = "" -- No image, using UIGradient
+                
+                local RainbowGradient = Instance.new("UIGradient", HueBar)
+                RainbowGradient.Rotation = 90
+                RainbowGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 0, 255)),
+                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 0, 255)),
+                    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 255, 0)),
+                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 255, 0)),
+                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+                })
 
+                local HueCursor = Instance.new("Frame", HueBar) -- Bar cursor
+                HueCursor.Size = UDim2.new(1, 0, 0, 2)
+                HueCursor.BackgroundColor3 = Color3.new(1,1,1)
+                HueCursor.BorderColor3 = Color3.new(0,0,0)
+                HueCursor.Position = UDim2.new(0, 0, 1-H, 0)
+
+                -- Logic
                 local function UpdateColor()
                     local NewColor = Color3.fromHSV(H, S, V)
                     Preview.BackgroundColor3 = NewColor
+                    SatValBox.BackgroundColor3 = Color3.fromHSV(H, 1, 1) -- Update Big Box Background
                     if Config.Callback then Config.Callback(NewColor) end
                 end
 
-                local Dragging = false; local DraggingV = false
-                Spectrum.MouseButton1Down:Connect(function() Dragging=true end)
-                Brightness.MouseButton1Down:Connect(function() DraggingV=true end)
+                local DraggingSatVal = false
+                local DraggingHue = false
+                
+                SatValBox.MouseButton1Down:Connect(function() DraggingSatVal=true end)
+                HueBar.MouseButton1Down:Connect(function() DraggingHue=true end)
                 
                 UserInputService.InputChanged:Connect(function(i)
                     if i.UserInputType == Enum.UserInputType.MouseMovement then
-                        if Dragging then
-                            local RelX = math.clamp((i.Position.X - Spectrum.AbsolutePosition.X) / Spectrum.AbsoluteSize.X, 0, 1)
-                            local RelY = math.clamp((i.Position.Y - Spectrum.AbsolutePosition.Y) / Spectrum.AbsoluteSize.Y, 0, 1)
-                            H = 1 - RelX; S = 1 - RelY; Cursor.Position = UDim2.new(RelX, -2, RelY, -2); UpdateColor()
-                        elseif DraggingV then
-                            local RelY = math.clamp((i.Position.Y - Brightness.AbsolutePosition.Y) / Brightness.AbsoluteSize.Y, 0, 1)
-                            V = 1 - RelY; BBar.Position = UDim2.new(0,0,RelY,0); UpdateColor()
+                        if DraggingSatVal then
+                            -- Update Saturation (X) and Value (Y)
+                            local RelX = math.clamp((i.Position.X - SatValBox.AbsolutePosition.X) / SatValBox.AbsoluteSize.X, 0, 1)
+                            local RelY = math.clamp((i.Position.Y - SatValBox.AbsolutePosition.Y) / SatValBox.AbsoluteSize.Y, 0, 1)
+                            S = RelX
+                            V = 1 - RelY
+                            Cursor.Position = UDim2.new(RelX, -2, RelY, -2)
+                            UpdateColor()
+                        elseif DraggingHue then
+                            -- Update Hue (Y)
+                            local RelY = math.clamp((i.Position.Y - HueBar.AbsolutePosition.Y) / HueBar.AbsoluteSize.Y, 0, 1)
+                            H = 1 - RelY
+                            HueCursor.Position = UDim2.new(0, 0, RelY, 0)
+                            UpdateColor()
                         end
                     end
                 end)
-                UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Dragging=false; DraggingV=false end end)
+                UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then DraggingSatVal=false; DraggingHue=false end end)
                 
                 local Open = false
                 Preview.MouseButton1Click:Connect(function() Open = not Open; if Open then F.Size = UDim2.new(1,0,0,130) else F.Size = UDim2.new(1,0,0,26) end end)
                 
-                function Obj:Set(Val) local h,s,v = Color3.toHSV(Val); H=h; S=s; V=v; UpdateColor() end
+                function Obj:Set(Val) 
+                    local h,s,v = Color3.toHSV(Val)
+                    H=h; S=s; V=v
+                    Cursor.Position = UDim2.new(S, -2, 1-V, -2)
+                    HueCursor.Position = UDim2.new(0, 0, 1-H, 0)
+                    UpdateColor() 
+                end
                 return Obj
             end
 
