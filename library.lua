@@ -1,230 +1,273 @@
 --[[
-    maddy.win | Da Hood (Workspace Folder Update)
-    - Feature: Configs are now saved inside a "maddy" folder in Workspace.
-    - Fix: Cleaner file management.
+    Excell Internal Library | v4.12 (Final Stable)
+    - All features included: Dropdowns (Refresh), Buttons, TextBoxes.
+    - Fixes: Scaling, Dragging, Parent Fallback.
 ]]
 
-local LibraryUrl = "https://raw.githubusercontent.com/logicalreasons/Excell-UI/refs/heads/main/library.lua?v="..tostring(math.random(1, 10000))
-local Library = loadstring(game:HttpGet(LibraryUrl))()
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-local HttpService = game:GetService("HttpService")
 
--- [[ CONFIG FOLDER SETUP ]]
-local ConfigFolder = "maddy"
-if not isfolder(ConfigFolder) then
-    makefolder(ConfigFolder)
-end
+print("[Excell] Library v4.12 Loaded")
 
-local Global = {
-    Aimbot = false,
-    AimPart = "HumanoidRootPart",
-    SilentAim = false,
-    SilentPart = "Closest Part",
-    Prediction = 0.135,
-    Smoothness = 0.1,
-    TriggerBot = false,
-    TriggerDelay = 0,
-    DrawFOV = false,
-    FOVRadius = 100,
-    BoxEsp = false
-}
+local Library = {}
+Library.ActiveMenu = nil 
 
-local UI = {} 
-local CurrentTarget = nil
-local FOVCircle = Drawing.new("Circle")
+function Library:CreateWindow(Config)
+    local Title = Config.Name or "Excell.win"
+    local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
+    
+    -- Cleanup Old UI
+    if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
+        game:GetService("CoreGui").ExcellInternal_v3:Destroy()
+    end
+    if LocalPlayer.PlayerGui:FindFirstChild("ExcellInternal_v3") then
+        LocalPlayer.PlayerGui.ExcellInternal_v3:Destroy()
+    end
 
--- Create Window
-local Window = Library:CreateWindow({ Name = "maddy.win", Accent = Color3.fromRGB(170, 100, 255) })
+    -- Create GUI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "ExcellInternal_v3"
+    ScreenGui.ResetOnSpawn = false
+    
+    -- Fallback Parent Logic
+    local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+    if not success or not ScreenGui.Parent then
+        ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    end
 
-local Combat = Window:CreateTab("Combat")
-local Visuals = Window:CreateTab("Visuals")
-local Configs = Window:CreateTab("Configs")
-local Settings = Window:CreateTab("Settings")
+    -- MAIN FRAME
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Name = "Main"
+    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    MainFrame.BorderColor3 = Accent
+    MainFrame.BorderSizePixel = 1
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MainFrame.Size = UDim2.new(0, 600, 0, 450)
+    MainFrame.Active = true
 
--- [[ COMBAT ]]
-local AimTab = Combat:CreateSubTab("Aimbot")
-AimTab:CreateKeybind({ Name = "Lock Key", Default = Enum.KeyCode.Q, Callback = function(v) Global.Aimbot = v; if not v then CurrentTarget=nil end end })
-UI.AimPart = AimTab:CreateDropdown({ Name = "Target Part", Options = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"}, CurrentOption = Global.AimPart, Callback = function(v) Global.AimPart = v end })
-UI.Prediction = AimTab:CreateSlider({ Name = "Prediction", Range = {100, 200}, CurrentValue = Global.Prediction*1000, Callback = function(v) Global.Prediction = v/1000 end })
-UI.Smoothness = AimTab:CreateSlider({ Name = "Smoothness", Range = {1, 20}, CurrentValue = 5, Callback = function(v) Global.Smoothness = 0.5/v end })
-UI.DrawFOV = AimTab:CreateToggle({ Name = "Draw FOV", CurrentValue = Global.DrawFOV, Callback = function(v) Global.DrawFOV = v end })
-UI.FOVRadius = AimTab:CreateSlider({ Name = "FOV Size", Range = {50, 600}, CurrentValue = Global.FOVRadius, Callback = function(v) Global.FOVRadius = v end })
+    -- UI SCALE
+    local UIScale = Instance.new("UIScale", MainFrame)
+    UIScale.Scale = 1
 
-local SilentTab = Combat:CreateSubTab("Silent Aim")
-UI.SilentAim = SilentTab:CreateToggle({ Name = "Enabled", CurrentValue = Global.SilentAim, Callback = function(v) Global.SilentAim = v end })
-UI.SilentPart = SilentTab:CreateDropdown({ Name = "Target Part", Options = {"Closest Part", "Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"}, CurrentOption = Global.SilentPart, Callback = function(v) Global.SilentPart = v end })
+    -- Top Bar
+    local TopBar = Instance.new("Frame", MainFrame)
+    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    TopBar.BorderSizePixel = 0
+    TopBar.Size = UDim2.new(1, 0, 0, 25)
 
-local TriggerTab = Combat:CreateSubTab("Trigger Bot")
-UI.TriggerBot = TriggerTab:CreateToggle({ Name = "Enabled", CurrentValue = Global.TriggerBot, Callback = function(v) Global.TriggerBot = v end })
-UI.TriggerDelay = TriggerTab:CreateSlider({ Name = "Delay (ms)", Range = {0, 200}, CurrentValue = Global.TriggerDelay, Callback = function(v) Global.TriggerDelay = v end })
-
--- [[ VISUALS ]]
-local EspTab = Visuals:CreateSubTab("ESP Settings")
-UI.BoxEsp = EspTab:CreateToggle({ Name = "Box ESP", CurrentValue = Global.BoxEsp, Callback = function(v) Global.BoxEsp = v end })
-
--- [[ CONFIGS ]]
-local ConfigTab = Configs:CreateSubTab("Manager")
-local CurrentConfigName = ""
-local SelectedConfig = ""
-
-local function GetConfigFiles()
-    local Files = {}
-    if listfiles then
-        for _, File in pairs(listfiles(ConfigFolder)) do
-            if File:sub(-5) == ".json" then
-                -- Strip folder path and extension to get clean name
-                local Name = File:match("([^/]+)%.json$") or File:match("([^\\]+)%.json$")
-                if Name then table.insert(Files, Name) end
+    -- Custom Drag Logic
+    local function MakeDraggable(Frame, Handle)
+        local Dragging, DragInput, DragStart, StartPos
+        Handle.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Dragging = true; DragStart = Input.Position; StartPos = Frame.Position
             end
-        end
+        end)
+        Handle.InputChanged:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement then DragInput = Input end
+        end)
+        UserInputService.InputChanged:Connect(function(Input)
+            if Input == DragInput and Dragging then
+                local Delta = Input.Position - DragStart
+                local CurrentScale = UIScale.Scale
+                Frame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + (Delta.X / CurrentScale), StartPos.Y.Scale, StartPos.Y.Offset + (Delta.Y / CurrentScale))
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then Dragging = false end
+        end)
     end
-    if #Files == 0 then return {"None"} end
-    return Files
-end
+    MakeDraggable(MainFrame, TopBar)
 
-ConfigTab:CreateTextBox({ Name = "New Config Name", Placeholder = "Type name...", Callback = function(val) CurrentConfigName = val end })
+    local TitleLbl = Instance.new("TextLabel", TopBar)
+    TitleLbl.Text = Title; TitleLbl.Font = Enum.Font.Code; TitleLbl.TextColor3 = Color3.new(1,1,1)
+    TitleLbl.BackgroundTransparency = 1; TitleLbl.Size = UDim2.new(1, -10, 1, 0); TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left; TitleLbl.TextSize = 14
 
-ConfigTab:CreateButton({ Name = "Save Config", Callback = function()
-    if CurrentConfigName == "" then return end
-    local Json = HttpService:JSONEncode(Global)
-    writefile(ConfigFolder .. "/" .. CurrentConfigName .. ".json", Json)
-    UI.ConfigList:Refresh(GetConfigFiles())
-end })
+    local Line = Instance.new("Frame", TopBar)
+    Line.BackgroundColor3 = Accent; Line.BorderSizePixel = 0; Line.Position = UDim2.new(0, 0, 1, 0); Line.Size = UDim2.new(1, 0, 0, 1)
 
-UI.ConfigList = ConfigTab:CreateDropdown({ 
-    Name = "Select Config", 
-    Options = GetConfigFiles(), 
-    CurrentOption = "None",
-    Callback = function(v) SelectedConfig = v end 
-})
+    local TabBar = Instance.new("Frame", MainFrame)
+    TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12); TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30); TabBar.BorderSizePixel = 1
+    TabBar.Position = UDim2.new(0, 10, 0, 35); TabBar.Size = UDim2.new(1, -20, 0, 30)
+    
+    local TabLayout = Instance.new("UIListLayout", TabBar)
+    TabLayout.FillDirection = Enum.FillDirection.Horizontal; TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-ConfigTab:CreateButton({ Name = "Load Selected", Callback = function()
-    if SelectedConfig == "" or SelectedConfig == "None" then return end
-    local Path = ConfigFolder .. "/" .. SelectedConfig .. ".json"
-    if isfile(Path) then
-        local Data = HttpService:JSONDecode(readfile(Path))
-        for k,v in pairs(Data) do Global[k] = v end
-        
-        -- Update UI
-        if UI.AimPart then UI.AimPart:Set(Global.AimPart) end
-        if UI.Prediction then UI.Prediction:Set(Global.Prediction*1000) end
-        if UI.Smoothness then UI.Smoothness:Set(0.5/Global.Smoothness) end
-        if UI.DrawFOV then UI.DrawFOV:Set(Global.DrawFOV) end
-        if UI.FOVRadius then UI.FOVRadius:Set(Global.FOVRadius) end
-        if UI.SilentAim then UI.SilentAim:Set(Global.SilentAim) end
-        if UI.SilentPart then UI.SilentPart:Set(Global.SilentPart) end
-        if UI.TriggerBot then UI.TriggerBot:Set(Global.TriggerBot) end
-        if UI.TriggerDelay then UI.TriggerDelay:Set(Global.TriggerDelay) end
-        if UI.BoxEsp then UI.BoxEsp:Set(Global.BoxEsp) end
-    end
-end })
+    local Content = Instance.new("Frame", MainFrame)
+    Content.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Content.BorderColor3 = Color3.fromRGB(30, 30, 30); Content.BorderSizePixel = 1
+    Content.Position = UDim2.new(0, 10, 0, 75); Content.Size = UDim2.new(1, -20, 1, -85)
 
-ConfigTab:CreateButton({ Name = "Refresh List", Callback = function()
-    UI.ConfigList:Refresh(GetConfigFiles())
-end })
+    local FirstTab = true
+    local WindowFunctions = {}
 
--- [[ SETTINGS ]]
-local MainSettings = Settings:CreateSubTab("Main")
-MainSettings:CreateSlider({ Name = "Menu Scale", Range = {50, 150}, CurrentValue = 100, Callback = function(v) Window:SetScale(v/100) end })
-MainSettings:CreateButton({ Name = "Unload Script", Callback = function() Window:Unload() end })
+    function WindowFunctions:SetScale(Val) UIScale.Scale = Val end
+    function WindowFunctions:Unload() ScreenGui:Destroy() end
 
--- [[ LOGIC ENGINE ]]
-local function GetClosest()
-    local MaxDist = Global.DrawFOV and Global.FOVRadius or 9999
-    local Target = nil
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-            local KO = v.Character:FindFirstChild("BodyEffects") and v.Character.BodyEffects["K.O"].Value
-            if not KO then
-                local Part = v.Character:FindFirstChild("HumanoidRootPart")
-                if Part then
-                    local Screen, OnScreen = Camera:WorldToViewportPoint(Part.Position)
-                    if OnScreen then
-                        local MouseDist = (Vector2.new(Screen.X, Screen.Y) - UserInputService:GetMouseLocation()).Magnitude
-                        if MouseDist < MaxDist then MaxDist = MouseDist; Target = v end
+    function WindowFunctions:CreateTab(TabName)
+        local TabBtn = Instance.new("TextButton", TabBar)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TabBtn.BorderColor3 = Color3.fromRGB(30, 30, 30); TabBtn.BorderSizePixel = 1
+        TabBtn.Size = UDim2.new(0, 120, 1, 0); TabBtn.Font = Enum.Font.Code; TabBtn.Text = TabName
+        TabBtn.TextColor3 = Color3.fromRGB(100, 100, 100); TabBtn.TextSize = 12
+
+        local TabPage = Instance.new("Frame", Content)
+        TabPage.BackgroundTransparency = 1; TabPage.Size = UDim2.new(1, 0, 1, 0); TabPage.Visible = false
+
+        local Sidebar = Instance.new("Frame", TabPage)
+        Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Sidebar.BorderColor3 = Color3.fromRGB(30, 30, 30); Sidebar.BorderSizePixel = 1
+        Sidebar.Size = UDim2.new(0, 140, 1, 0)
+        local SidebarList = Instance.new("UIListLayout", Sidebar); SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+
+        local Items = Instance.new("Frame", TabPage)
+        Items.BackgroundTransparency = 1; Items.Position = UDim2.new(0, 150, 0, 10); Items.Size = UDim2.new(1, -160, 1, -20)
+
+        if FirstTab then TabBtn.TextColor3=Accent; TabPage.Visible=true; FirstTab=false end
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _,v in pairs(Content:GetChildren()) do v.Visible=false end
+            for _,v in pairs(TabBar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3=Color3.fromRGB(100,100,100) end end
+            TabPage.Visible=true; TabBtn.TextColor3=Accent
+        end)
+
+        local TabFuncs = {}
+        local FirstSub = true
+
+        function TabFuncs:CreateSubTab(Name)
+            local SubBtn = Instance.new("TextButton", Sidebar)
+            SubBtn.BackgroundTransparency = 1; SubBtn.Size = UDim2.new(1, 0, 0, 25); SubBtn.Font = Enum.Font.Code
+            SubBtn.Text = " " .. Name; SubBtn.TextColor3 = Color3.fromRGB(100, 100, 100); SubBtn.TextSize = 12; SubBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+            local Container = Instance.new("ScrollingFrame", Items)
+            Container.BackgroundTransparency = 1; Container.Size = UDim2.new(1, 0, 1, 0); Container.Visible = false
+            Container.ScrollBarThickness = 2
+            local List = Instance.new("UIListLayout", Container); List.Padding = UDim.new(0, 5)
+
+            if FirstSub then SubBtn.TextColor3=Color3.new(1,1,1); Container.Visible=true; FirstSub=false end
+
+            SubBtn.MouseButton1Click:Connect(function()
+                for _,v in pairs(Items:GetChildren()) do v.Visible=false end
+                for _,v in pairs(Sidebar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3=Color3.fromRGB(100,100,100) end end
+                Container.Visible=true; SubBtn.TextColor3=Color3.new(1,1,1)
+            end)
+
+            local PageFuncs = {}
+
+            -- TOGGLE
+            function PageFuncs:CreateToggle(Config)
+                local Obj = {}
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
+                local B = Instance.new("TextButton", F); B.BackgroundTransparency=1; B.Size=UDim2.new(1,0,1,0); B.Font=Enum.Font.Code; B.Text=Config.Name; B.TextColor3=Color3.fromRGB(200,200,200); B.TextSize=12; B.TextXAlignment=Enum.TextXAlignment.Left
+                local Box = Instance.new("Frame", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(1,-18,0.5,-6); Box.Size=UDim2.new(0,12,0,12)
+                local Fill = Instance.new("Frame", Box); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new(1,0,1,0); Fill.Visible=Config.CurrentValue or false
+                local function Update(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
+                B.MouseButton1Click:Connect(function() Update(not Fill.Visible) end)
+                function Obj:Set(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
+                return Obj
+            end
+
+            -- BUTTON
+            function PageFuncs:CreateButton(Config)
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
+                local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Size=UDim2.new(1,-10,0,22); B.Position=UDim2.new(0,0,0,2)
+                B.Font=Enum.Font.Code; B.Text=Config.Name; B.TextColor3=Color3.new(1,1,1); B.TextSize=11
+                B.MouseButton1Click:Connect(function() if Config.Callback then Config.Callback() end end)
+            end
+
+            -- SLIDER
+            function PageFuncs:CreateSlider(Config)
+                local Obj = {}
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,35)
+                local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
+                local V = Instance.new("TextLabel", F); V.Text=tostring(Config.CurrentValue); V.TextColor3=Accent; V.BackgroundTransparency=1; V.Position=UDim2.new(1,-40,0,0); V.Size=UDim2.new(0,30,0,15); V.Font=Enum.Font.Code; V.TextSize=12
+                local BG = Instance.new("TextButton", F); BG.BackgroundColor3=Color3.fromRGB(25,25,25); BG.BorderColor3=Color3.fromRGB(50,50,50); BG.Position=UDim2.new(0,0,0,18); BG.Size=UDim2.new(1,-10,0,6); BG.Text=""
+                local Fill = Instance.new("Frame", BG); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new((Config.CurrentValue-Config.Range[1])/(Config.Range[2]-Config.Range[1]),0,1,0)
+                local function Update(Val)
+                    local P = (Val - Config.Range[1]) / (Config.Range[2] - Config.Range[1])
+                    Fill.Size = UDim2.new(P, 0, 1, 0); V.Text = tostring(Val); if Config.Callback then Config.Callback(Val) end
+                end
+                local Drag=false
+                BG.MouseButton1Down:Connect(function() Drag=true end)
+                UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then Drag=false end end)
+                UserInputService.InputChanged:Connect(function(i) if Drag and i.UserInputType==Enum.UserInputType.MouseMovement then
+                    local S = math.clamp((UserInputService:GetMouseLocation().X - BG.AbsolutePosition.X)/BG.AbsoluteSize.X,0,1)
+                    local New = math.floor(Config.Range[1] + ((Config.Range[2]-Config.Range[1])*S))
+                    Update(New)
+                end end)
+                function Obj:Set(Val) Update(Val) end
+                return Obj
+            end
+
+            -- DROPDOWN (Supports Refresh)
+            function PageFuncs:CreateDropdown(Config)
+                local Obj = {}
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
+                local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,20); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
+                local MainBtn = Instance.new("TextButton", F); MainBtn.BackgroundColor3=Color3.fromRGB(25,25,25); MainBtn.BorderColor3=Color3.fromRGB(50,50,50); MainBtn.Position=UDim2.new(0,0,0,25); MainBtn.Size=UDim2.new(1,-10,0,20); MainBtn.Text=Config.CurrentOption or Config.Options[1]; MainBtn.TextColor3=Accent; MainBtn.Font=Enum.Font.Code; MainBtn.TextSize=11
+                
+                local Open = false; local ListSize = #Config.Options * 20
+                local Scroll = Instance.new("ScrollingFrame", F); Scroll.BackgroundColor3=Color3.fromRGB(20,20,20); Scroll.BorderColor3=Color3.fromRGB(50,50,50); Scroll.Position=UDim2.new(0,0,0,48); Scroll.Size=UDim2.new(1,-10,0, ListSize); Scroll.ScrollBarThickness=2; Scroll.Visible=false
+                local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
+                
+                MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end end)
+                
+                function Obj:Set(Val) MainBtn.Text = Val; if Config.Callback then Config.Callback(Val) end end
+                
+                function Obj:Refresh(NewOptions)
+                    for _, v in pairs(Scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+                    for _, Option in pairs(NewOptions) do
+                        local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
+                        OptBtn.MouseButton1Click:Connect(function() Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); Obj:Set(Option) end)
                     end
+                    ListSize = #NewOptions * 20
+                    Scroll.Size = UDim2.new(1, -10, 0, ListSize)
+                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) end
                 end
-            end
-        end
-    end
-    return Target
-end
 
-local function GetClosestBodyPart(Char)
-    local Dist = 9999
-    local Closest = nil
-    local Parts = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso", "LeftHand", "RightHand", "LeftFoot", "RightFoot"}
-    for _, Name in pairs(Parts) do
-        local Part = Char:FindFirstChild(Name)
-        if Part then
-            local Screen, OnScreen = Camera:WorldToViewportPoint(Part.Position)
-            if OnScreen then
-                local Mag = (Vector2.new(Screen.X, Screen.Y) - UserInputService:GetMouseLocation()).Magnitude
-                if Mag < Dist then
-                    Dist = Mag
-                    Closest = Part
-                end
-            end
-        end
-    end
-    return Closest
-end
-
-RunService.RenderStepped:Connect(function()
-    FOVCircle.Visible = Global.DrawFOV
-    FOVCircle.Radius = Global.FOVRadius
-    FOVCircle.Position = UserInputService:GetMouseLocation()
-    FOVCircle.Color = Color3.fromRGB(170, 100, 255)
-    FOVCircle.Thickness = 1
-
-    if Global.TriggerBot then
-        local t = Mouse.Target
-        if t and t.Parent and t.Parent:FindFirstChild("Humanoid") and t.Parent.Name ~= LocalPlayer.Name then
-            task.wait(Global.TriggerDelay/1000)
-            mouse1click()
-        end
-    end
-
-    if Global.Aimbot or Global.SilentAim then
-        if not CurrentTarget then CurrentTarget = GetClosest() end
-        if CurrentTarget and CurrentTarget.Character then
-            local Part = nil
-            if Global.SilentAim then
-                if Global.SilentPart == "Closest Part" then Part = GetClosestBodyPart(CurrentTarget.Character) else Part = CurrentTarget.Character:FindFirstChild(Global.SilentPart) end
-            elseif Global.Aimbot then
-                Part = CurrentTarget.Character:FindFirstChild(Global.AimPart)
+                Obj:Refresh(Config.Options)
+                return Obj
             end
 
-            if Part then
-                local Pred = Part.Position + (Part.Velocity * Global.Prediction)
-                local Goal = CFrame.new(Camera.CFrame.Position, Pred)
-                Camera.CFrame = Camera.CFrame:Lerp(Goal, Global.Smoothness)
-                FOVCircle.Color = Color3.fromRGB(255, 0, 0)
-            else CurrentTarget = nil end
-        else CurrentTarget = nil; FOVCircle.Color = Color3.fromRGB(170, 100, 255) end
-    else CurrentTarget = nil end
-end)
+            -- TEXTBOX
+            function PageFuncs:CreateTextBox(Config)
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,40)
+                local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
+                local Box = Instance.new("TextBox", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(0,0,0,18); Box.Size=UDim2.new(1,-10,0,20)
+                Box.Font=Enum.Font.Code; Box.TextSize=12; Box.TextColor3=Color3.new(1,1,1); Box.Text = ""; Box.PlaceholderText = Config.Placeholder or "..."
+                Box.FocusLost:Connect(function(Enter) if Enter and Config.Callback then Config.Callback(Box.Text) end end)
+            end
 
-local function AddEsp(P)
-    local B = Drawing.new("Square")
-    local c; c=RunService.RenderStepped:Connect(function()
-        if not P.Parent then B:Remove(); c:Disconnect() return end
-        if Global.BoxEsp and P.Character and P.Character:FindFirstChild("HumanoidRootPart") and P~=LocalPlayer then
-            local Root = P.Character.HumanoidRootPart
-            local Pos, OnScreen = Camera:WorldToViewportPoint(Root.Position)
-            local Dist = (Camera.CFrame.Position - Root.Position).Magnitude
-            if OnScreen then
-                local Size = 3500 / Dist
-                B.Visible=true; B.Size=Vector2.new(Size*0.6, Size); B.Position=Vector2.new(Pos.X-B.Size.X/2, Pos.Y-B.Size.Y/2); B.Color=Color3.new(1,1,1); B.Thickness=1; B.Filled=false
-            else B.Visible=false end
-        else B.Visible=false end
-    end)
+            -- KEYBIND
+            function PageFuncs:CreateKeybind(Config)
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
+                local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
+                local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Position=UDim2.new(1,-70,0.5,-9); B.Size=UDim2.new(0,60,0,18)
+                B.TextColor3=Color3.fromRGB(150,150,150); B.Font=Enum.Font.Code; B.TextSize=11
+                local Mode = "Toggle"; local Key = Config.Default; local Binding = false
+                local function UpdateText() B.Text = Key and Key.Name or "None" end; UpdateText()
+
+                B.MouseButton1Click:Connect(function() Binding=true; B.Text="..."; B.TextColor3=Accent; local i = UserInputService.InputBegan:Wait(); if i.UserInputType==Enum.UserInputType.Keyboard then Key=i.KeyCode; B.TextColor3=Color3.fromRGB(150,150,150); Binding=false; UpdateText() elseif i.UserInputType==Enum.UserInputType.MouseButton1 then Binding=false; B.TextColor3=Color3.fromRGB(150,150,150); UpdateText() end end)
+                B.MouseButton2Click:Connect(function()
+                    if Library.ActiveMenu then Library.ActiveMenu:Destroy() Library.ActiveMenu = nil end
+                    local Menu = Instance.new("Frame", ScreenGui); Menu.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Menu.BorderColor3 = Accent; Menu.BorderSizePixel = 1; Menu.Size = UDim2.new(0, 100, 0, 95); Menu.Position = UDim2.new(0, Mouse.X, 0, Mouse.Y); Menu.ZIndex = 100; Library.ActiveMenu = Menu
+                    local Header = Instance.new("Frame", Menu); Header.BackgroundColor3=Color3.fromRGB(30,30,30); Header.BorderSizePixel=0; Header.Size=UDim2.new(1,0,0,20); Header.ZIndex=101
+                    local CloseBtn = Instance.new("TextButton", Header); CloseBtn.BackgroundTransparency=1; CloseBtn.Text="X"; CloseBtn.TextColor3=Color3.fromRGB(255,100,100); CloseBtn.Size=UDim2.new(0,20,1,0); CloseBtn.Position=UDim2.new(1,-20,0,0); CloseBtn.Font=Enum.Font.Code; CloseBtn.TextSize=12; CloseBtn.ZIndex=103; CloseBtn.MouseButton1Click:Connect(function() Menu:Destroy() Library.ActiveMenu=nil end)
+                    local OptionHolder = Instance.new("Frame", Menu); OptionHolder.BackgroundTransparency=1; OptionHolder.Position=UDim2.new(0,0,0,22); OptionHolder.Size=UDim2.new(1,0,1,-22); OptionHolder.ZIndex=101
+                    local Layout = Instance.new("UIListLayout", OptionHolder); Layout.SortOrder=Enum.SortOrder.LayoutOrder
+                    local function AddOpt(Name) local Opt = Instance.new("TextButton", OptionHolder); Opt.Size = UDim2.new(1, 0, 0, 22); Opt.BackgroundTransparency = 1; Opt.Text = Name; Opt.Font = Enum.Font.Code; Opt.TextSize = 12; Opt.TextColor3 = (Mode == Name) and Accent or Color3.fromRGB(200, 200, 200); Opt.ZIndex = 102; Opt.MouseButton1Click:Connect(function() if Config.Callback then Config.Callback(false) end; Mode = Name; UpdateText(); Menu:Destroy(); Library.ActiveMenu = nil end) end
+                    AddOpt("Toggle"); AddOpt("Hold"); AddOpt("Always")
+                end)
+                local Toggled = false
+                UserInputService.InputBegan:Connect(function(i, p) if p then return end; if i.KeyCode == Key and Mode == "Toggle" then Toggled = not Toggled; if Config.Callback then Config.Callback(Toggled) end end end)
+                RunService.RenderStepped:Connect(function() if Mode == "Hold" and Config.Callback then Config.Callback(UserInputService:IsKeyDown(Key or Enum.KeyCode.Unknown)) elseif Mode == "Always" and Config.Callback then Config.Callback(true) end end)
+            end
+
+            return PageFuncs
+        end
+        return TabFuncs
+    end
+    return WindowFunctions
 end
-for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then AddEsp(p) end end
-Players.PlayerAdded:Connect(function(p) AddEsp(p) end)
+return Library
