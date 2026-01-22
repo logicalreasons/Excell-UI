@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.15 (Fix: Complete Code)
-    - Fix: Solves syntax errors causing "No UI".
-    - Feature: Bigger dropdown lists, Overwrite support.
+    Excell Internal Library | v4.16 (Aggressive Cleanup Fix)
+    - Fix: Deletes ALL previous UI instances (fixes "Old UI not deleting").
+    - Fix: "CreateLabel" and "Overwrite" support included.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -16,17 +16,21 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
-        game:GetService("CoreGui").ExcellInternal_v3:Destroy()
+    -- [[ AGGRESSIVE CLEANUP ]] --
+    -- This loops through everything and deletes ANY old version of the UI
+    for _, GUI in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if GUI.Name == "ExcellInternal_v3" then GUI:Destroy() end
     end
-    if LocalPlayer.PlayerGui:FindFirstChild("ExcellInternal_v3") then
-        LocalPlayer.PlayerGui.ExcellInternal_v3:Destroy()
+    for _, GUI in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+        if GUI.Name == "ExcellInternal_v3" then GUI:Destroy() end
     end
 
+    -- Create GUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
+    -- Parent Fallback (CoreGui -> PlayerGui)
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -50,6 +54,7 @@ function Library:CreateWindow(Config)
     TopBar.BorderSizePixel = 0
     TopBar.Size = UDim2.new(1, 0, 0, 25)
 
+    -- Drag Logic
     local function MakeDraggable(Frame, Handle)
         local Dragging, DragInput, DragStart, StartPos
         Handle.InputBegan:Connect(function(Input)
@@ -84,6 +89,7 @@ function Library:CreateWindow(Config)
     local TabBar = Instance.new("Frame", MainFrame)
     TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12); TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30); TabBar.BorderSizePixel = 1
     TabBar.Position = UDim2.new(0, 10, 0, 35); TabBar.Size = UDim2.new(1, -20, 0, 30)
+    
     local TabLayout = Instance.new("UIListLayout", TabBar); TabLayout.FillDirection = Enum.FillDirection.Horizontal; TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local Content = Instance.new("Frame", MainFrame)
@@ -144,15 +150,17 @@ function Library:CreateWindow(Config)
 
             local PageFuncs = {}
 
+            -- LABEL
             function PageFuncs:CreateLabel(Text)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
                 local L = Instance.new("TextLabel", F); L.BackgroundTransparency=1; L.Size=UDim2.new(1,-10,1,0); L.Position=UDim2.new(0,0,0,0)
-                L.Font=Enum.Font.Code; L.Text=Text; L.TextColor3=Color3.fromRGB(200,200,200); L.TextSize=11; L.TextXAlignment=Enum.TextXAlignment.Left
+                L.Font=Enum.Font.Code; L.Text=Text; L.TextColor3=Color3.fromRGB(200, 200, 200); L.TextSize=11; L.TextXAlignment=Enum.TextXAlignment.Left
                 function Obj:Set(NewText, Color) L.Text = NewText; if Color then L.TextColor3 = Color end end
                 return Obj
             end
 
+            -- TOGGLE
             function PageFuncs:CreateToggle(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
@@ -165,6 +173,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
+            -- BUTTON
             function PageFuncs:CreateButton(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
                 local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Size=UDim2.new(1,-10,0,22); B.Position=UDim2.new(0,0,0,2)
@@ -172,6 +181,7 @@ function Library:CreateWindow(Config)
                 B.MouseButton1Click:Connect(function() if Config.Callback then Config.Callback() end end)
             end
 
+            -- SLIDER
             function PageFuncs:CreateSlider(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,35)
@@ -195,6 +205,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
+            -- DROPDOWN (Bigger List + Refresh)
             function PageFuncs:CreateDropdown(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
@@ -203,8 +214,13 @@ function Library:CreateWindow(Config)
                 local Open = false; local ListSize = 0
                 local Scroll = Instance.new("ScrollingFrame", F); Scroll.BackgroundColor3=Color3.fromRGB(20,20,20); Scroll.BorderColor3=Color3.fromRGB(50,50,50); Scroll.Position=UDim2.new(0,0,0,48); Scroll.Size=UDim2.new(1,-10,0,0); Scroll.ScrollBarThickness=2; Scroll.Visible=false
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
-                MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + math.min(ListSize, 150)) else F.Size = UDim2.new(1, 0, 0, 50) end end)
+                
+                MainBtn.MouseButton1Click:Connect(function() 
+                    Open = not Open; Scroll.Visible = Open
+                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + math.min(ListSize, 150)) else F.Size = UDim2.new(1, 0, 0, 50) end 
+                end)
                 function Obj:Set(Val) MainBtn.Text = Val; if Config.Callback then Config.Callback(Val) end end
+                
                 function Obj:Refresh(NewOptions)
                     for _, v in pairs(Scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
                     for _, Option in pairs(NewOptions) do
@@ -219,6 +235,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
+            -- TEXTBOX
             function PageFuncs:CreateTextBox(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,40)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
@@ -227,6 +244,7 @@ function Library:CreateWindow(Config)
                 Box:GetPropertyChangedSignal("Text"):Connect(function() if Config.Callback then Config.Callback(Box.Text) end end)
             end
 
+            -- KEYBIND
             function PageFuncs:CreateKeybind(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,22)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,1,0); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
