@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.8 (Menu Scale Fix)
-    - Fix: Scaling now applies ONLY to the window, preventing drift.
-    - Fix: Fallback parent logic included (v4.7).
+    Excell Internal Library | v4.9 (Drag & Scale Math Fix)
+    - Fix: Custom drag logic prevents menu from "running away" when scaled.
+    - Fix: Menu scales from the center (AnchorPoint 0.5, 0.5).
     - Features: Dropdowns, Sliders, Toggles.
 ]]
 
@@ -10,7 +10,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-print("[Excell] Library v4.8 Loaded")
+print("[Excell] Library v4.9 Loaded")
 
 local Library = {}
 Library.ActiveMenu = nil 
@@ -32,24 +32,25 @@ function Library:CreateWindow(Config)
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
-    -- Parent Logic
+    -- Fallback Parent Logic
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- MAIN FRAME (Directly in ScreenGui now, no wrapper)
+    -- MAIN FRAME
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "Main"
     MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     MainFrame.BorderColor3 = Accent
     MainFrame.BorderSizePixel = 1
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300) -- Centered
-    MainFrame.Size = UDim2.new(0, 600, 0, 600)
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5) -- Fixes scaling origin
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Perfectly centered
+    MainFrame.Size = UDim2.new(0, 600, 0, 450)
     MainFrame.Active = true
-    MainFrame.Draggable = true
+    -- MainFrame.Draggable = true  <-- DISABLED (This caused the lag)
 
-    -- UI SCALE (Inside MainFrame now)
+    -- UI SCALE
     local UIScale = Instance.new("UIScale", MainFrame)
     UIScale.Scale = 1
 
@@ -58,6 +59,46 @@ function Library:CreateWindow(Config)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     TopBar.BorderSizePixel = 0
     TopBar.Size = UDim2.new(1, 0, 0, 25)
+
+    -- Custom Drag Logic (Fixes the "running away" bug)
+    local function MakeDraggable(Frame, Handle)
+        local Dragging, DragInput, DragStart, StartPos
+        
+        Handle.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Dragging = true
+                DragStart = Input.Position
+                StartPos = Frame.Position
+                
+                Input.Changed:Connect(function()
+                    if Input.UserInputState == Enum.UserInputState.End then
+                        Dragging = false
+                    end
+                end)
+            end
+        end)
+        
+        Handle.InputChanged:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement then
+                DragInput = Input
+            end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(Input)
+            if Input == DragInput and Dragging then
+                local Delta = Input.Position - DragStart
+                -- MATH FIX: Divide Delta by Scale to normalize movement speed
+                local CurrentScale = UIScale.Scale
+                Frame.Position = UDim2.new(
+                    StartPos.X.Scale, 
+                    StartPos.X.Offset + (Delta.X / CurrentScale), 
+                    StartPos.Y.Scale, 
+                    StartPos.Y.Offset + (Delta.Y / CurrentScale)
+                )
+            end
+        end)
+    end
+    MakeDraggable(MainFrame, TopBar) -- Enable custom drag
 
     local TitleLbl = Instance.new("TextLabel", TopBar)
     TitleLbl.Text = Title
