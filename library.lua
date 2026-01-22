@@ -1,8 +1,7 @@
 --[[
-    Excell Internal Library | v4.10 (Config System Support)
-    - Feature: Added 'CreateTextBox'.
-    - Feature: UI Elements now return :Set(val) for Config Loading.
-    - Fix: Drag & Scale logic preserved.
+    Excell Internal Library | v4.11 (Button Support)
+    - Feature: Added 'CreateButton' element.
+    - Fix: Preserved drag, scale, and config logic.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -10,7 +9,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-print("[Excell] Library v4.10 Loaded")
+print("[Excell] Library v4.11 Loaded")
 
 local Library = {}
 Library.ActiveMenu = nil 
@@ -158,14 +157,18 @@ function Library:CreateWindow(Config)
                 local Box = Instance.new("Frame", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(1,-18,0.5,-6); Box.Size=UDim2.new(0,12,0,12)
                 local Fill = Instance.new("Frame", Box); Fill.BackgroundColor3=Accent; Fill.BorderSizePixel=0; Fill.Size=UDim2.new(1,0,1,0); Fill.Visible=Config.CurrentValue or false
                 
-                local function Update(Val)
-                    Fill.Visible = Val
-                    if Config.Callback then Config.Callback(Val) end
-                end
-                
+                local function Update(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
                 B.MouseButton1Click:Connect(function() Update(not Fill.Visible) end)
                 function Obj:Set(Val) Fill.Visible = Val; if Config.Callback then Config.Callback(Val) end end
                 return Obj
+            end
+
+            -- BUTTON (NEW)
+            function PageFuncs:CreateButton(Config)
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
+                local B = Instance.new("TextButton", F); B.BackgroundColor3=Color3.fromRGB(25,25,25); B.BorderColor3=Color3.fromRGB(50,50,50); B.Size=UDim2.new(1,-10,0,22); B.Position=UDim2.new(0,0,0,2)
+                B.Font=Enum.Font.Code; B.Text=Config.Name; B.TextColor3=Color3.new(1,1,1); B.TextSize=11
+                B.MouseButton1Click:Connect(function() if Config.Callback then Config.Callback() end end)
             end
 
             -- SLIDER
@@ -192,7 +195,6 @@ function Library:CreateWindow(Config)
                     local New = math.floor(Config.Range[1] + ((Config.Range[2]-Config.Range[1])*S))
                     Update(New)
                 end end)
-                
                 function Obj:Set(Val) Update(Val) end
                 return Obj
             end
@@ -208,9 +210,7 @@ function Library:CreateWindow(Config)
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
                 
                 MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end end)
-                
                 function Obj:Set(Val) MainBtn.Text = Val; if Config.Callback then Config.Callback(Val) end end
-                
                 for _, Option in pairs(Config.Options) do
                     local OptBtn = Instance.new("TextButton", Scroll); OptBtn.Size = UDim2.new(1, 0, 0, 20); OptBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); OptBtn.Text = Option; OptBtn.TextColor3 = Color3.fromRGB(200, 200, 200); OptBtn.Font = Enum.Font.Code; OptBtn.TextSize = 11; OptBtn.BorderSizePixel = 0
                     OptBtn.MouseButton1Click:Connect(function() Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); Obj:Set(Option) end)
@@ -218,16 +218,13 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- TEXTBOX (NEW)
+            -- TEXTBOX
             function PageFuncs:CreateTextBox(Config)
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,40)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local Box = Instance.new("TextBox", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(0,0,0,18); Box.Size=UDim2.new(1,-10,0,20)
                 Box.Font=Enum.Font.Code; Box.TextSize=12; Box.TextColor3=Color3.new(1,1,1); Box.Text = ""; Box.PlaceholderText = Config.Placeholder or "..."
-                
-                Box.FocusLost:Connect(function(Enter)
-                    if Enter and Config.Callback then Config.Callback(Box.Text) end
-                end)
+                Box.FocusLost:Connect(function(Enter) if Enter and Config.Callback then Config.Callback(Box.Text) end end)
             end
 
             -- KEYBIND
