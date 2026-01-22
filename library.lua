@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.16 (Aggressive Cleanup Fix)
-    - Fix: Deletes ALL previous UI instances (fixes "Old UI not deleting").
-    - Fix: "CreateLabel" and "Overwrite" support included.
+    Excell Internal Library | v4.17 (GitHub Hosted)
+    - Fix: Aggressive Auto-Cleanup (Deletes old UIs instantly).
+    - Features: Overwrite, Labels, Buttons, Refreshable Dropdowns.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -16,8 +16,8 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- [[ AGGRESSIVE CLEANUP ]] --
-    -- This loops through everything and deletes ANY old version of the UI
+    -- [[ AGGRESSIVE CLEANUP ]]
+    -- Deletes any existing copies of the UI to prevent stacking
     for _, GUI in pairs(game:GetService("CoreGui"):GetChildren()) do
         if GUI.Name == "ExcellInternal_v3" then GUI:Destroy() end
     end
@@ -25,12 +25,11 @@ function Library:CreateWindow(Config)
         if GUI.Name == "ExcellInternal_v3" then GUI:Destroy() end
     end
 
-    -- Create GUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
-    -- Parent Fallback (CoreGui -> PlayerGui)
+    -- Fallback Parent Logic
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -54,7 +53,7 @@ function Library:CreateWindow(Config)
     TopBar.BorderSizePixel = 0
     TopBar.Size = UDim2.new(1, 0, 0, 25)
 
-    -- Drag Logic
+    -- Custom Drag Logic
     local function MakeDraggable(Frame, Handle)
         local Dragging, DragInput, DragStart, StartPos
         Handle.InputBegan:Connect(function(Input)
@@ -89,7 +88,6 @@ function Library:CreateWindow(Config)
     local TabBar = Instance.new("Frame", MainFrame)
     TabBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12); TabBar.BorderColor3 = Color3.fromRGB(30, 30, 30); TabBar.BorderSizePixel = 1
     TabBar.Position = UDim2.new(0, 10, 0, 35); TabBar.Size = UDim2.new(1, -20, 0, 30)
-    
     local TabLayout = Instance.new("UIListLayout", TabBar); TabLayout.FillDirection = Enum.FillDirection.Horizontal; TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local Content = Instance.new("Frame", MainFrame)
@@ -205,7 +203,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- DROPDOWN (Bigger List + Refresh)
+            -- DROPDOWN (Refresh + Bigger List)
             function PageFuncs:CreateDropdown(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
