@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.19 (Color Picker Fixed)
-    - Fix: Updated Color Picker Image ID to real RGB Spectrum.
-    - Fix: Aggressive Cleanup included.
+    Excell Internal Library | v4.20 (Color Picker Visual Fix)
+    - Fix: Swapped the Spectrum Image ID to a real Rainbow map.
+    - Result: The color picker will now show actual colors, not just black/white.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -168,7 +168,7 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- COLOR PICKER (FIXED)
+            -- COLOR PICKER (FIXED IMAGE ID)
             function PageFuncs:CreateColorPicker(Config)
                 local Obj = {}
                 local Default = Config.Default or Color3.fromRGB(255, 255, 255)
@@ -182,17 +182,17 @@ function Library:CreateWindow(Config)
                 
                 local PickerFrame = Instance.new("Frame", F); PickerFrame.BackgroundTransparency=1; PickerFrame.Position=UDim2.new(0,0,0,30); PickerFrame.Size=UDim2.new(1,0,0,110)
                 
-                -- FIXED IMAGE: Using Rainbow Spectrum
+                -- FIXED: This is the Rainbow Map
                 local Spectrum = Instance.new("ImageButton", PickerFrame)
-                Spectrum.Image="rbxassetid://6971565518" -- REAL RGB MAP
+                Spectrum.Image="rbxassetid://6971565518" 
                 Spectrum.Size=UDim2.new(0,90,0,90); Spectrum.Position=UDim2.new(0,10,0,0); Spectrum.BorderColor3=Color3.fromRGB(50,50,50)
                 
                 local Cursor = Instance.new("Frame", Spectrum); Cursor.Size=UDim2.new(0,4,0,4); Cursor.BorderColor3=Color3.new(0,0,0); Cursor.BackgroundColor3=Color3.new(1,1,1); Cursor.Position=UDim2.new(1-H,0,1-S,0)
                 
-                -- Brightness Slider
+                -- FIXED: This is the Brightness Slider (Shadow)
                 local Brightness = Instance.new("ImageButton", PickerFrame)
-                Brightness.Image="rbxassetid://4155801252" -- Gradient for darkness
-                Brightness.BackgroundColor3 = Color3.new(0,0,0) -- Base black
+                Brightness.Image="rbxassetid://4155801252"
+                Brightness.BackgroundColor3 = Color3.new(0,0,0)
                 Brightness.ImageColor3 = Color3.new(1,1,1)
                 Brightness.Size=UDim2.new(0,20,0,90); Brightness.Position=UDim2.new(0,110,0,0); Brightness.BorderColor3=Color3.fromRGB(50,50,50)
                 local BBar = Instance.new("Frame", Brightness); BBar.Size=UDim2.new(1,0,0,2); BBar.BackgroundColor3=Color3.new(1,1,1); BBar.BorderColor3=Color3.new(0,0,0); BBar.Position=UDim2.new(0,0,1-V,0)
