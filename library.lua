@@ -1,7 +1,8 @@
 --[[
-    Excell Internal Library | v4.7 (Parenting Fix)
-    - Fix: Fallback to PlayerGui if CoreGui fails (Solves "Not Opening").
-    - Fix: Added debug prints to confirm loading.
+    Excell Internal Library | v4.8 (Menu Scale Fix)
+    - Fix: Scaling now applies ONLY to the window, preventing drift.
+    - Fix: Fallback parent logic included (v4.7).
+    - Features: Dropdowns, Sliders, Toggles.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -9,13 +10,12 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-print("[Excell] Library Module Loaded") -- Debug print
+print("[Excell] Library v4.8 Loaded")
 
 local Library = {}
 Library.ActiveMenu = nil 
 
 function Library:CreateWindow(Config)
-    print("[Excell] Creating Window...") -- Debug print
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
@@ -32,28 +32,26 @@ function Library:CreateWindow(Config)
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
-    -- CRITICAL FIX: Attempt CoreGui, fallback to PlayerGui
+    -- Parent Logic
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    local ScaleFrame = Instance.new("Frame", ScreenGui)
-    ScaleFrame.Name = "Scale"
-    ScaleFrame.BackgroundTransparency = 1
-    ScaleFrame.Size = UDim2.new(1, 0, 1, 0)
-    local UIScale = Instance.new("UIScale", ScaleFrame)
-    UIScale.Scale = 1
-
-    local MainFrame = Instance.new("Frame", ScaleFrame)
+    -- MAIN FRAME (Directly in ScreenGui now, no wrapper)
+    local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "Main"
     MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     MainFrame.BorderColor3 = Accent
     MainFrame.BorderSizePixel = 1
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -300) -- Centered
     MainFrame.Size = UDim2.new(0, 600, 0, 600)
     MainFrame.Active = true
     MainFrame.Draggable = true
+
+    -- UI SCALE (Inside MainFrame now)
+    local UIScale = Instance.new("UIScale", MainFrame)
+    UIScale.Scale = 1
 
     -- Top Bar
     local TopBar = Instance.new("Frame", MainFrame)
