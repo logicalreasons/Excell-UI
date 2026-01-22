@@ -1,7 +1,7 @@
 --[[
-    Excell Internal Library | v4.12 (Final Stable)
-    - All features included: Dropdowns (Refresh), Buttons, TextBoxes.
-    - Fixes: Scaling, Dragging, Parent Fallback.
+    Excell Internal Library | v4.14 (Labels & Big Lists)
+    - Feature: Added 'CreateLabel'.
+    - Visual: Dropdown lists are now much taller.
 ]]
 
 local UserInputService = game:GetService("UserInputService")
@@ -9,7 +9,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-print("[Excell] Library v4.12 Loaded")
+print("[Excell] Library v4.14 Loaded")
 
 local Library = {}
 Library.ActiveMenu = nil 
@@ -18,7 +18,6 @@ function Library:CreateWindow(Config)
     local Title = Config.Name or "Excell.win"
     local Accent = Config.Accent or Color3.fromRGB(170, 100, 255)
     
-    -- Cleanup Old UI
     if game:GetService("CoreGui"):FindFirstChild("ExcellInternal_v3") then
         game:GetService("CoreGui").ExcellInternal_v3:Destroy()
     end
@@ -26,18 +25,15 @@ function Library:CreateWindow(Config)
         LocalPlayer.PlayerGui.ExcellInternal_v3:Destroy()
     end
 
-    -- Create GUI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ExcellInternal_v3"
     ScreenGui.ResetOnSpawn = false
     
-    -- Fallback Parent Logic
     local success, _ = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
     if not success or not ScreenGui.Parent then
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- MAIN FRAME
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Name = "Main"
     MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
@@ -48,17 +44,14 @@ function Library:CreateWindow(Config)
     MainFrame.Size = UDim2.new(0, 600, 0, 450)
     MainFrame.Active = true
 
-    -- UI SCALE
     local UIScale = Instance.new("UIScale", MainFrame)
     UIScale.Scale = 1
 
-    -- Top Bar
     local TopBar = Instance.new("Frame", MainFrame)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     TopBar.BorderSizePixel = 0
     TopBar.Size = UDim2.new(1, 0, 0, 25)
 
-    -- Custom Drag Logic
     local function MakeDraggable(Frame, Handle)
         local Dragging, DragInput, DragStart, StartPos
         Handle.InputBegan:Connect(function(Input)
@@ -155,6 +148,16 @@ function Library:CreateWindow(Config)
 
             local PageFuncs = {}
 
+            -- LABEL (NEW)
+            function PageFuncs:CreateLabel(Text)
+                local Obj = {}
+                local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,26)
+                local L = Instance.new("TextLabel", F); L.BackgroundTransparency=1; L.Size=UDim2.new(1,-10,1,0); L.Position=UDim2.new(0,0,0,0)
+                L.Font=Enum.Font.Code; L.Text=Text; L.TextColor3=Color3.fromRGB(200, 200, 200); L.TextSize=11; L.TextXAlignment=Enum.TextXAlignment.Left
+                function Obj:Set(NewText, Color) L.Text = NewText; if Color then L.TextColor3 = Color end end
+                return Obj
+            end
+
             -- TOGGLE
             function PageFuncs:CreateToggle(Config)
                 local Obj = {}
@@ -200,18 +203,18 @@ function Library:CreateWindow(Config)
                 return Obj
             end
 
-            -- DROPDOWN (Supports Refresh)
+            -- DROPDOWN (Supports Refresh + Bigger List)
             function PageFuncs:CreateDropdown(Config)
                 local Obj = {}
                 local F = Instance.new("Frame", Container); F.BackgroundTransparency=1; F.Size=UDim2.new(1,0,0,50); F.ClipsDescendants = true
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,20); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local MainBtn = Instance.new("TextButton", F); MainBtn.BackgroundColor3=Color3.fromRGB(25,25,25); MainBtn.BorderColor3=Color3.fromRGB(50,50,50); MainBtn.Position=UDim2.new(0,0,0,25); MainBtn.Size=UDim2.new(1,-10,0,20); MainBtn.Text=Config.CurrentOption or Config.Options[1]; MainBtn.TextColor3=Accent; MainBtn.Font=Enum.Font.Code; MainBtn.TextSize=11
                 
-                local Open = false; local ListSize = #Config.Options * 20
-                local Scroll = Instance.new("ScrollingFrame", F); Scroll.BackgroundColor3=Color3.fromRGB(20,20,20); Scroll.BorderColor3=Color3.fromRGB(50,50,50); Scroll.Position=UDim2.new(0,0,0,48); Scroll.Size=UDim2.new(1,-10,0, ListSize); Scroll.ScrollBarThickness=2; Scroll.Visible=false
+                local Open = false; local ListSize = 0
+                local Scroll = Instance.new("ScrollingFrame", F); Scroll.BackgroundColor3=Color3.fromRGB(20,20,20); Scroll.BorderColor3=Color3.fromRGB(50,50,50); Scroll.Position=UDim2.new(0,0,0,48); Scroll.Size=UDim2.new(1,-10,0,0); Scroll.ScrollBarThickness=2; Scroll.Visible=false
                 local SList = Instance.new("UIListLayout", Scroll); SList.SortOrder=Enum.SortOrder.LayoutOrder
                 
-                MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) else F.Size = UDim2.new(1, 0, 0, 50) end end)
+                MainBtn.MouseButton1Click:Connect(function() Open = not Open; Scroll.Visible = Open; if Open then F.Size = UDim2.new(1, 0, 0, 50 + math.min(ListSize, 150)) else F.Size = UDim2.new(1, 0, 0, 50) end end)
                 
                 function Obj:Set(Val) MainBtn.Text = Val; if Config.Callback then Config.Callback(Val) end end
                 
@@ -222,8 +225,8 @@ function Library:CreateWindow(Config)
                         OptBtn.MouseButton1Click:Connect(function() Open = false; Scroll.Visible = false; F.Size = UDim2.new(1, 0, 0, 50); Obj:Set(Option) end)
                     end
                     ListSize = #NewOptions * 20
-                    Scroll.Size = UDim2.new(1, -10, 0, ListSize)
-                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + ListSize) end
+                    Scroll.Size = UDim2.new(1, -10, 0, math.min(ListSize, 150)) -- Max height 150
+                    if Open then F.Size = UDim2.new(1, 0, 0, 50 + math.min(ListSize, 150)) end
                 end
 
                 Obj:Refresh(Config.Options)
@@ -236,7 +239,10 @@ function Library:CreateWindow(Config)
                 local L = Instance.new("TextLabel", F); L.Text=Config.Name; L.TextColor3=Color3.fromRGB(200,200,200); L.BackgroundTransparency=1; L.Size=UDim2.new(1,0,0,15); L.Font=Enum.Font.Code; L.TextSize=12; L.TextXAlignment=Enum.TextXAlignment.Left
                 local Box = Instance.new("TextBox", F); Box.BackgroundColor3=Color3.fromRGB(25,25,25); Box.BorderColor3=Color3.fromRGB(50,50,50); Box.Position=UDim2.new(0,0,0,18); Box.Size=UDim2.new(1,-10,0,20)
                 Box.Font=Enum.Font.Code; Box.TextSize=12; Box.TextColor3=Color3.new(1,1,1); Box.Text = ""; Box.PlaceholderText = Config.Placeholder or "..."
-                Box.FocusLost:Connect(function(Enter) if Enter and Config.Callback then Config.Callback(Box.Text) end end)
+                
+                Box:GetPropertyChangedSignal("Text"):Connect(function()
+                    if Config.Callback then Config.Callback(Box.Text) end
+                end)
             end
 
             -- KEYBIND
